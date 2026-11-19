@@ -90,16 +90,6 @@
     75% { transform: translateX(6px); }
   }
 
-  .js-warning {
-    background: #7f1d1d;
-    border: 2px solid #fca5a5;
-    color: #fff;
-    padding: 10px;
-    border-radius: 10px;
-    font-size: 13px;
-    text-align: center;
-  }
-
   .hud-top {
     display: flex;
     justify-content: space-between;
@@ -492,11 +482,7 @@
 </style>
 </head>
 <body>
-<div class="game-cabinet">
-  <div class="js-warning" id="jsWarningBox">
-    ⚠️ Este visualizador bloqueou o JavaScript. Abra o arquivo pelo <strong>Google Chrome / Safari</strong> ou via link web (GitHub Pages / Netlify).
-  </div>
-
+<div class="game-cabinet" id="gameCabinet">
   <!-- HUD SUPERIOR -->
   <div class="hud-top">
     <div class="hud-box">
@@ -507,7 +493,7 @@
       </div>
     </div>
 
-    <button class="audio-btn" id="musicBtn" type="button" onclick="toggleMusicBtn()">♪ ON</button>
+    <button class="audio-btn" id="musicBtn" type="button">♪ ON</button>
 
     <div class="hud-box">
       <span class="level-text" id="hudLevel">NÍVEL 01</span>
@@ -535,28 +521,28 @@
       <div>
         <span class="field-label">Escolha seu Emotion (<span id="selectedEmoPreview">👾</span>)</span>
         <div class="emotions-grid" id="emotionsGrid">
-          <button type="button" class="emotion-btn active" onclick="selectEmotion(this, '👾')">👾</button>
-          <button type="button" class="emotion-btn" onclick="selectEmotion(this, '🚀')">🚀</button>
-          <button type="button" class="emotion-btn" onclick="selectEmotion(this, '😎')">😎</button>
-          <button type="button" class="emotion-btn" onclick="selectEmotion(this, '🔥')">🔥</button>
-          <button type="button" class="emotion-btn" onclick="selectEmotion(this, '🤖')">🤖</button>
-          <button type="button" class="emotion-btn" onclick="selectEmotion(this, '⚡')">⚡</button>
-          <button type="button" class="emotion-btn" onclick="selectEmotion(this, '🎯')">🎯</button>
-          <button type="button" class="emotion-btn" onclick="selectEmotion(this, '🩺')">🩺</button>
-          <button type="button" class="emotion-btn" onclick="selectEmotion(this, '🌟')">🌟</button>
-          <button type="button" class="emotion-btn" onclick="selectEmotion(this, '👑')">👑</button>
+          <button type="button" class="emotion-btn active" data-emo="👾">👾</button>
+          <button type="button" class="emotion-btn" data-emo="🚀">🚀</button>
+          <button type="button" class="emotion-btn" data-emo="😎">😎</button>
+          <button type="button" class="emotion-btn" data-emo="🔥">🔥</button>
+          <button type="button" class="emotion-btn" data-emo="🤖">🤖</button>
+          <button type="button" class="emotion-btn" data-emo="⚡">⚡</button>
+          <button type="button" class="emotion-btn" data-emo="🎯">🎯</button>
+          <button type="button" class="emotion-btn" data-emo="🩺">🩺</button>
+          <button type="button" class="emotion-btn" data-emo="🌟">🌟</button>
+          <button type="button" class="emotion-btn" data-emo="👑">👑</button>
         </div>
       </div>
 
-      <button class="btn-primary" id="btnEnterLobby" type="button" onclick="enterLobby()">ENTRAR NA SALA</button>
-      <div class="status-msg" id="entryStatus"></div>
+      <button class="btn-primary" id="btnEnterLobby" type="button">ENTRAR NA SALA</button>
+      <div class="status-msg" id="entryStatus">Pronto para jogar.</div>
 
-      <!-- Painel do Instrutor (sem dica de senha na tela) -->
+      <!-- Painel do Instrutor (senha não exibida na tela) -->
       <div class="instructor-box">
         <span class="field-label" style="color: var(--gold-top); margin:0;">Acesso do Instrutor</span>
         <div style="display:flex; gap:8px;">
           <input class="arcade-input" id="instructorPinInput" type="password" maxlength="12" placeholder="Senha do instrutor" style="padding:8px 10px; font-size:13px;">
-          <button class="btn-secondary" id="btnInstructorLogin" type="button" onclick="loginInstructor()" style="padding:8px 10px; font-size:8.5px;">ENTRAR INSTRUTOR</button>
+          <button class="btn-secondary" id="btnInstructorLogin" type="button" style="padding:8px 10px; font-size:8.5px;">ENTRAR INSTRUTOR</button>
         </div>
       </div>
     </div>
@@ -583,10 +569,10 @@
           <option value="180" selected>3 minutos (180s)</option>
           <option value="300">5 minutos (300s)</option>
         </select>
-        <button class="btn-primary" id="btnStartMatch" type="button" onclick="instructorStartMatch()">▶ INICIAR QUIZ PARA TODOS</button>
+        <button class="btn-primary" id="btnStartMatch" type="button">▶ INICIAR QUIZ PARA TODOS</button>
       </div>
 
-      <button class="btn-secondary" id="btnBackEntry" type="button" onclick="backToEntry()">← TROCAR NOME / EMOTION</button>
+      <button class="btn-secondary" id="btnBackEntry" type="button">← TROCAR NOME / EMOTION</button>
       <div class="status-msg" id="lobbyStatus"></div>
     </div>
   </section>
@@ -605,8 +591,8 @@
       <div class="options-list" id="optionsList"></div>
 
       <div class="footer-nav">
-        <button class="btn-secondary" id="btnPrevQ" type="button" onclick="prevQuestion()">← ANTERIOR</button>
-        <button class="btn-primary" id="btnNextQ" type="button" onclick="nextQuestion()">PRÓXIMA →</button>
+        <button class="btn-secondary" id="btnPrevQ" type="button">← ANTERIOR</button>
+        <button class="btn-primary" id="btnNextQ" type="button">PRÓXIMA →</button>
       </div>
     </div>
   </section>
@@ -620,97 +606,19 @@
       <div class="ranking-list" id="rankingList"></div>
 
       <div class="footer-nav" style="grid-template-columns: 1fr;">
-        <button class="btn-primary" id="btnPlayAgain" type="button" onclick="playAgain()">VOLTAR AO LOBBY</button>
+        <button class="btn-primary" id="btnPlayAgain" type="button">VOLTAR AO LOBBY</button>
       </div>
     </div>
   </section>
 </div>
 
 <script>
-  // Esconde imediatamente o aviso se o JS estiver funcionando
-  var warnBox = document.getElementById("jsWarningBox");
-  if (warnBox) warnBox.style.display = "none";
-
-  // =========================================================================
-  // 1. SUPABASE REST API (SEM DEPENDER DE CDN EXTERNO)
-  // =========================================================================
+(function () {
   var SUPABASE_URL = "https://mlvdgmvmuzbcughekpiz.supabase.co";
   var SUPABASE_ANON_KEY = "sb_publishable_04TgybpwC683g-FRmfFLBg_2qwAVVzl";
   var ROOM_CODE = "IAGORA";
   var INSTRUCTOR_PIN = "2026";
 
-  function sbHeaders(prefer) {
-    var h = {
-      "apikey": SUPABASE_ANON_KEY,
-      "Authorization": "Bearer " + SUPABASE_ANON_KEY,
-      "Content-Type": "application/json"
-    };
-    if (prefer) h["Prefer"] = prefer;
-    return h;
-  }
-
-  async function sbGetRoom() {
-    var res = await fetch(
-      SUPABASE_URL + "/rest/v1/quiz_rooms?room_code=eq." + ROOM_CODE + "&select=*",
-      { headers: sbHeaders() }
-    );
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    var rows = await res.json();
-    return rows && rows.length ? rows[0] : null;
-  }
-
-  async function sbUpsertRoom(payload) {
-    var res = await fetch(
-      SUPABASE_URL + "/rest/v1/quiz_rooms?on_conflict=room_code",
-      {
-        method: "POST",
-        headers: sbHeaders("resolution=merge-duplicates,return=representation"),
-        body: JSON.stringify(payload)
-      }
-    );
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    return res.json();
-  }
-
-  async function sbGetPlayers() {
-    var res = await fetch(
-      SUPABASE_URL + "/rest/v1/quiz_players?room_code=eq." + ROOM_CODE + "&select=*&order=score.desc,joined_at.asc",
-      { headers: sbHeaders() }
-    );
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    return res.json();
-  }
-
-  async function sbInsertPlayer(payload) {
-    var res = await fetch(
-      SUPABASE_URL + "/rest/v1/quiz_players",
-      {
-        method: "POST",
-        headers: sbHeaders("return=representation"),
-        body: JSON.stringify(payload)
-      }
-    );
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    var rows = await res.json();
-    return rows && rows.length ? rows[0] : null;
-  }
-
-  async function sbUpdatePlayer(id, payload) {
-    var res = await fetch(
-      SUPABASE_URL + "/rest/v1/quiz_players?id=eq." + id,
-      {
-        method: "PATCH",
-        headers: sbHeaders("return=representation"),
-        body: JSON.stringify(payload)
-      }
-    );
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    return res.json();
-  }
-
-  // =========================================================================
-  // 2. AS 10 PERGUNTAS
-  // =========================================================================
   var QUESTIONS = [
     {
       num: 1,
@@ -814,500 +722,512 @@
     }
   ];
 
-  // =========================================================================
-  // 3. MÚSICA GAMER ANIMADA (WEB AUDIO API)
-  // =========================================================================
+  // Áudio Gamer Web Audio API
   var audioCtx = null;
   var musicOn = true;
-  var musicLoopId = null;
-  var musicStep = 0;
+  var musicTimer = null;
+  var noteIdx = 0;
+  var NOTES = [523.25, 659.25, 783.99, 1046.50, 783.99, 659.25, 587.33, 698.46, 880.00, 1046.50, 880.00, 698.46, 587.33, 783.99, 659.25, 523.25];
 
-  var MELODY = [
-    523.25, 659.25, 783.99, 1046.50, 783.99, 659.25, 587.33, 698.46,
-    880.00, 1046.50, 880.00, 698.46, 587.33, 783.99, 659.25, 523.25
-  ];
-
-  function unlockAudio() {
+  function ensureAudio() {
     try {
       if (!audioCtx) {
-        var AC = window.AudioContext || window.webkitAudioContext;
-        if (AC) audioCtx = new AC();
+        var Ctx = window.AudioContext || window.webkitAudioContext;
+        if (Ctx) audioCtx = new Ctx();
       }
       if (audioCtx && audioCtx.state === "suspended") {
         audioCtx.resume();
       }
-      if (musicOn && !musicLoopId) {
-        musicLoopId = setInterval(function () {
+      if (musicOn && !musicTimer) {
+        musicTimer = setInterval(function () {
           if (!musicOn) return;
-          var note = MELODY[musicStep % MELODY.length];
-          playTone(note, 0.11, "square", 0.04, 0);
-          if (musicStep % 4 === 0) {
-            playTone(note / 2, 0.14, "triangle", 0.05, 0);
-          }
-          musicStep++;
+          var n = NOTES[noteIdx % NOTES.length];
+          tone(n, 0.11, "square", 0.035, 0);
+          if (noteIdx % 4 === 0) tone(n * 0.5, 0.14, "triangle", 0.045, 0);
+          noteIdx++;
         }, 180);
       }
     } catch (e) {}
   }
 
-  function playTone(freq, duration, type, gainVal, delay) {
+  function tone(freq, dur, wave, vol, delay) {
     if (!musicOn || !audioCtx) return;
     try {
-      var now = audioCtx.currentTime + (delay || 0);
-      var osc = audioCtx.createOscillator();
-      var gain = audioCtx.createGain();
-      osc.type = type || "square";
-      osc.frequency.setValueAtTime(freq, now);
-      gain.gain.setValueAtTime(gainVal || 0.05, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + (duration || 0.1));
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start(now);
-      osc.stop(now + (duration || 0.1));
+      var t = audioCtx.currentTime + (delay || 0);
+      var o = audioCtx.createOscillator();
+      var g = audioCtx.createGain();
+      o.type = wave || "square";
+      o.frequency.setValueAtTime(freq, t);
+      g.gain.setValueAtTime(vol || 0.05, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + (dur || 0.1));
+      o.connect(g);
+      g.connect(audioCtx.destination);
+      o.start(t);
+      o.stop(t + (dur || 0.1));
     } catch (e) {}
   }
 
-  function toggleMusicBtn() {
-    musicOn = !musicOn;
-    document.getElementById("musicBtn").textContent = musicOn ? "♪ ON" : "♪ OFF";
-    if (musicOn) {
-      unlockAudio();
-      playTone(880, 0.09, "square", 0.06, 0);
-    } else if (musicLoopId) {
-      clearInterval(musicLoopId);
-      musicLoopId = null;
+  function sfx(kind) {
+    ensureAudio();
+    if (kind === "ok") {
+      tone(587.33, 0.08, "square", 0.06, 0);
+      tone(880, 0.14, "square", 0.06, 0.08);
+    } else if (kind === "err") {
+      tone(220, 0.12, "sawtooth", 0.06, 0);
+      tone(165, 0.18, "sawtooth", 0.06, 0.1);
+    } else if (kind === "win") {
+      [523.25, 659.25, 783.99, 1046.5].forEach(function (f, i) {
+        tone(f, 0.14, "square", 0.06, i * 0.11);
+      });
+    } else {
+      tone(660, 0.06, "square", 0.05, 0);
     }
   }
 
-  function sfxClick() { unlockAudio(); playTone(660, 0.06, "square", 0.05, 0); }
-  function sfxCorrect() {
-    unlockAudio();
-    playTone(587.33, 0.08, "square", 0.06, 0);
-    playTone(880, 0.14, "square", 0.06, 0.08);
-  }
-  function sfxWrong() {
-    unlockAudio();
-    playTone(220, 0.12, "sawtooth", 0.06, 0);
-    playTone(165, 0.18, "sawtooth", 0.06, 0.1);
-  }
-  function sfxFanfare() {
-    unlockAudio();
-    [523.25, 659.25, 783.99, 1046.5].forEach(function (f, i) {
-      playTone(f, 0.14, "square", 0.06, i * 0.11);
-    });
+  // REST helpers Supabase
+  function headers(prefer) {
+    var h = {
+      "apikey": SUPABASE_ANON_KEY,
+      "Authorization": "Bearer " + SUPABASE_ANON_KEY,
+      "Content-Type": "application/json"
+    };
+    if (prefer) h["Prefer"] = prefer;
+    return h;
   }
 
-  // =========================================================================
-  // 4. ESTADO DO JOGO
-  // =========================================================================
+  function restCall(path, method, body, prefer, cb) {
+    try {
+      fetch(SUPABASE_URL + "/rest/v1/" + path, {
+        method: method || "GET",
+        headers: headers(prefer),
+        body: body ? JSON.stringify(body) : undefined
+      })
+        .then(function (r) {
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          return r.text();
+        })
+        .then(function (txt) {
+          var parsed = null;
+          if (txt) {
+            try { parsed = JSON.parse(txt); } catch (e) { parsed = null; }
+          }
+          if (cb) cb(null, parsed);
+        })
+        .catch(function (err) {
+          if (cb) cb(err, null);
+        });
+    } catch (err) {
+      if (cb) cb(err, null);
+    }
+  }
+
   var state = {
     playerId: null,
     playerName: "",
     emotion: "👾",
     isInstructor: false,
-    currentIndex: 0,
-    selectedAnswers: {},
+    qIndex: 0,
+    answers: {},
     lives: 3,
     score: 0,
-    correctCount: 0,
-    matchStartedAt: null,
+    corrects: 0,
     durationSec: 180,
     remainingSec: 180,
-    timerInterval: null,
-    pollInterval: null,
-    playersCache: []
+    startedAtMs: null,
+    clockId: null,
+    players: []
   };
 
-  function showScreen(id) {
-    var screens = document.querySelectorAll(".screen");
-    for (var i = 0; i < screens.length; i++) {
-      screens[i].classList.remove("active");
-    }
-    document.getElementById(id).classList.add("active");
-    document.getElementById("instructorControls").style.display = state.isInstructor ? "flex" : "none";
-  }
+  function byId(id) { return document.getElementById(id); }
 
-  function escapeHtml(str) {
-    return String(str).replace(/[&<>"']/g, function (m) {
-      return { "&": "&", "<": "<", ">": ">", '"': """, "'": "'" }[m];
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&", "<": "<", ">": ">", '"': """, "'": "'" }[c];
     });
   }
 
-  function formatTime(sec) {
-    var safe = Math.max(0, sec);
-    var m = String(Math.floor(safe / 60)).padStart(2, "0");
-    var s = String(safe % 60).padStart(2, "0");
-    return m + ":" + s;
+  function fmtSec(s) {
+    var n = Math.max(0, s);
+    return String(Math.floor(n / 60)).padStart(2, "0") + ":" + String(n % 60).padStart(2, "0");
   }
 
-  function updateHud() {
+  function goScreen(id) {
+    var all = document.querySelectorAll(".screen");
+    for (var i = 0; i < all.length; i++) all[i].classList.remove("active");
+    byId(id).classList.add("active");
+    byId("instructorControls").style.display = state.isInstructor ? "flex" : "none";
+  }
+
+  function syncHud() {
     for (var i = 1; i <= 3; i++) {
-      var h = document.getElementById("heart" + i);
-      if (i > state.lives) h.classList.add("lost");
-      else h.classList.remove("lost");
+      var el = byId("heart" + i);
+      if (i > state.lives) el.classList.add("lost");
+      else el.classList.remove("lost");
     }
-    var lvl = String(state.currentIndex + 1).padStart(2, "0");
-    document.getElementById("hudLevel").textContent = "NÍVEL " + lvl;
-
-    var segs = document.querySelectorAll("#hudLevelBars .level-seg");
-    var activeCount = Math.max(1, Math.ceil(((state.currentIndex + 1) / QUESTIONS.length) * 5));
-    for (var j = 0; j < segs.length; j++) {
-      if (j < activeCount) segs[j].classList.add("filled");
-      else segs[j].classList.remove("filled");
+    byId("hudLevel").textContent = "NÍVEL " + String(state.qIndex + 1).padStart(2, "0");
+    var bars = document.querySelectorAll("#hudLevelBars .level-seg");
+    var lit = Math.max(1, Math.ceil(((state.qIndex + 1) / QUESTIONS.length) * 5));
+    for (var j = 0; j < bars.length; j++) {
+      if (j < lit) bars[j].classList.add("filled");
+      else bars[j].classList.remove("filled");
     }
   }
 
-  // =========================================================================
-  // 5. FUNÇÕES DOS BOTÕES
-  // =========================================================================
-  function selectEmotion(btnEl, emo) {
-    var all = document.querySelectorAll("#emotionsGrid .emotion-btn");
-    for (var i = 0; i < all.length; i++) {
-      all[i].classList.remove("active");
-    }
-    btnEl.classList.add("active");
-    state.emotion = emo;
-    document.getElementById("selectedEmoPreview").textContent = emo;
-    sfxClick();
-  }
-
-  async function loginInstructor() {
-    var pin = document.getElementById("instructorPinInput").value.trim();
-    if (pin === INSTRUCTOR_PIN) {
-      state.isInstructor = true;
-      sfxCorrect();
-      document.getElementById("entryStatus").textContent = "Modo Instrutor ativado!";
-      if (!state.playerName) state.playerName = "Instrutor";
-      try {
-        await sbUpsertRoom({ room_code: ROOM_CODE, status: "waiting", duration_seconds: 180 });
-        await refreshLobbyAndRanking();
-      } catch (e) {
-        document.getElementById("lobbyStatus").textContent = "Sala local pronta (" + e.message + ")";
-      }
-      showScreen("screenLobby");
-    } else {
-      sfxWrong();
-      document.getElementById("entryStatus").textContent = "Senha incorreta.";
-    }
-  }
-
-  async function enterLobby() {
-    var name = document.getElementById("playerNameInput").value.trim();
-    if (!name) {
-      sfxWrong();
-      document.getElementById("entryStatus").textContent = "Digite seu nome para entrar.";
-      return;
-    }
-
-    sfxClick();
-    state.playerName = name;
-    document.getElementById("entryStatus").textContent = "Entrando na sala...";
-
-    try {
-      await sbUpsertRoom({ room_code: ROOM_CODE, status: "waiting", duration_seconds: 180 });
-      var inserted = await sbInsertPlayer({
-        room_code: ROOM_CODE,
-        player_name: state.playerName,
-        emotion: state.emotion,
-        score: 0,
-        correct_count: 0,
-        finished: false
-      });
-      if (inserted && inserted.id) state.playerId = inserted.id;
-      document.getElementById("lobbyStatus").textContent = "Conectado! Aguarde o instrutor iniciar.";
-      await refreshLobbyAndRanking();
-    } catch (e) {
-      state.playersCache.push({
-        player_name: state.playerName,
-        emotion: state.emotion,
-        score: 0,
-        correct_count: 0,
-        finished: false
-      });
-      renderLobbyPlayers(state.playersCache);
-      document.getElementById("lobbyStatus").textContent = "Aviso conexão: " + e.message;
-    }
-
-    showScreen("screenLobby");
-  }
-
-  function backToEntry() {
-    sfxClick();
-    showScreen("screenEntry");
-  }
-
-  async function instructorStartMatch() {
-    if (!state.isInstructor) return;
-    var dur = Number(document.getElementById("matchDurationSelect").value) || 180;
-    var nowIso = new Date().toISOString();
-    document.getElementById("lobbyStatus").textContent = "Iniciando quiz...";
-
-    try {
-      await sbUpsertRoom({
-        room_code: ROOM_CODE,
-        status: "playing",
-        started_at: nowIso,
-        duration_seconds: dur,
-        updated_at: nowIso
-      });
-    } catch (e) {
-      document.getElementById("lobbyStatus").textContent = "Iniciando localmente (" + e.message + ")";
-    }
-
-    startQuizMatch(dur, nowIso);
-  }
-
-  function renderLobbyPlayers(players) {
-    state.playersCache = players || [];
-    document.getElementById("lobbyCount").textContent =
-      state.playersCache.length + (state.playersCache.length === 1 ? " JOGADOR" : " JOGADORES");
-
-    var list = document.getElementById("lobbyPlayersList");
-    list.innerHTML = "";
-    state.playersCache.forEach(function (p) {
-      var div = document.createElement("div");
-      div.className = "lobby-player";
-      div.innerHTML =
-        "<span>" + (p.emotion || "👾") + " " + escapeHtml(p.player_name) + "</span>" +
+  function renderPlayers(list) {
+    state.players = list || [];
+    byId("lobbyCount").textContent = state.players.length + (state.players.length === 1 ? " JOGADOR" : " JOGADORES");
+    var box = byId("lobbyPlayersList");
+    box.innerHTML = "";
+    for (var i = 0; i < state.players.length; i++) {
+      var p = state.players[i];
+      var row = document.createElement("div");
+      row.className = "lobby-player";
+      row.innerHTML =
+        "<span>" + esc(p.emotion || "👾") + " " + esc(p.player_name) + "</span>" +
         '<span class="badge-ready">' + (p.finished ? "FINALIZOU" : "PRONTO") + "</span>";
-      list.appendChild(div);
+      box.appendChild(row);
+    }
+  }
+
+  function pollSupabase() {
+    restCall("quiz_rooms?room_code=eq." + ROOM_CODE + "&select=*", "GET", null, null, function (err, rooms) {
+      if (!err && rooms && rooms.length) {
+        var rm = rooms[0];
+        if (rm.status === "playing" && !state.startedAtMs) {
+          beginMatch(rm.duration_seconds || 180, rm.started_at);
+        }
+      }
+    });
+
+    restCall("quiz_players?room_code=eq." + ROOM_CODE + "&select=*&order=score.desc,joined_at.asc", "GET", null, null, function (err, rows) {
+      if (!err && rows) {
+        renderPlayers(rows);
+        if (byId("screenRanking").classList.contains("active")) {
+          drawRanking(rows);
+        }
+      }
     });
   }
 
-  async function refreshLobbyAndRanking() {
-    try {
-      var room = await sbGetRoom();
-      var players = await sbGetPlayers();
-      if (players) renderLobbyPlayers(players);
-
-      if (room && room.status === "playing" && !state.matchStartedAt) {
-        startQuizMatch(room.duration_seconds || 180, room.started_at);
-      } else if (document.getElementById("screenRanking").classList.contains("active") && players) {
-        renderRanking(players);
-      }
-    } catch (e) {}
-  }
-
-  // =========================================================================
-  // 6. QUIZ & RANKING
-  // =========================================================================
-  function startQuizMatch(durationSec, startedAtIso) {
-    sfxFanfare();
-    state.currentIndex = 0;
-    state.selectedAnswers = {};
+  function beginMatch(dur, iso) {
+    sfx("win");
+    state.qIndex = 0;
+    state.answers = {};
     state.lives = 3;
     state.score = 0;
-    state.correctCount = 0;
-    state.durationSec = Number(durationSec) || 180;
-    state.matchStartedAt = startedAtIso ? new Date(startedAtIso).getTime() : Date.now();
-
-    if (startedAtIso) {
-      var elapsed = Math.floor((Date.now() - state.matchStartedAt) / 1000);
-      state.remainingSec = Math.max(0, state.durationSec - elapsed);
+    state.corrects = 0;
+    state.durationSec = Number(dur) || 180;
+    state.startedAtMs = iso ? new Date(iso).getTime() : Date.now();
+    if (iso) {
+      var diff = Math.floor((Date.now() - state.startedAtMs) / 1000);
+      state.remainingSec = Math.max(0, state.durationSec - diff);
     } else {
       state.remainingSec = state.durationSec;
     }
-
-    showScreen("screenQuiz");
-    renderQuestion();
-    startTimer();
+    goScreen("screenQuiz");
+    drawQuestion();
+    runClock();
   }
 
-  function startTimer() {
-    clearInterval(state.timerInterval);
-    var timerEl = document.getElementById("matchTimer");
-    timerEl.textContent = "⏱ " + formatTime(state.remainingSec);
-
-    state.timerInterval = setInterval(function () {
+  function runClock() {
+    clearInterval(state.clockId);
+    byId("matchTimer").textContent = "⏱ " + fmtSec(state.remainingSec);
+    state.clockId = setInterval(function () {
       state.remainingSec--;
-      timerEl.textContent = "⏱ " + formatTime(state.remainingSec);
-      if (state.remainingSec <= 20) timerEl.classList.add("danger");
-      else timerEl.classList.remove("danger");
-
+      byId("matchTimer").textContent = "⏱ " + fmtSec(state.remainingSec);
+      if (state.remainingSec <= 20) byId("matchTimer").classList.add("danger");
+      else byId("matchTimer").classList.remove("danger");
       if (state.remainingSec <= 0) {
-        clearInterval(state.timerInterval);
-        finishQuiz();
+        clearInterval(state.clockId);
+        completeMatch();
       }
     }, 1000);
   }
 
-  function renderQuestion() {
-    var q = QUESTIONS[state.currentIndex];
-    updateHud();
+  function drawQuestion() {
+    var q = QUESTIONS[state.qIndex];
+    syncHud();
+    byId("qCounter").textContent = "QUESTÃO " + String(q.num).padStart(2, "0") + " / 10";
+    byId("qBonus").textContent = "PTS: " + state.score;
+    byId("questionText").textContent = q.text;
 
-    document.getElementById("qCounter").textContent =
-      "QUESTÃO " + String(q.num).padStart(2, "0") + " / 10";
-    document.getElementById("qBonus").textContent = "PTS: " + state.score;
-    document.getElementById("questionText").textContent = q.text;
+    var optsBox = byId("optionsList");
+    optsBox.innerHTML = "";
+    var prev = state.answers[q.num];
 
-    var optionsList = document.getElementById("optionsList");
-    optionsList.innerHTML = "";
+    for (var i = 0; i < q.options.length; i++) {
+      (function (opt) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "option-card" + (prev === opt.key ? " selected" : "");
+        b.innerHTML = '<span class="opt-badge">' + opt.key + "</span><span>" + esc(opt.label) + "</span>";
+        b.onclick = function () {
+          var already = state.answers[q.num];
+          state.answers[q.num] = opt.key;
+          var cards = document.querySelectorAll("#optionsList .option-card");
+          for (var k = 0; k < cards.length; k++) {
+            cards[k].classList.remove("selected", "correct-flash", "wrong-flash");
+          }
+          b.classList.add("selected");
+          if (!already) {
+            if (opt.key === q.correct) {
+              state.score += 100 + Math.min(50, Math.floor(state.remainingSec / 4));
+              state.corrects++;
+              b.classList.add("correct-flash");
+              sfx("ok");
+            } else {
+              state.lives = Math.max(0, state.lives - 1);
+              b.classList.add("wrong-flash");
+              sfx("err");
+            }
+            byId("qBonus").textContent = "PTS: " + state.score;
+            syncHud();
+          } else {
+            sfx("click");
+          }
+        };
+        optsBox.appendChild(b);
+      })(q.options[i]);
+    }
 
-    var chosen = state.selectedAnswers[q.num];
-
-    q.options.forEach(function (opt) {
-      var btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "option-card" + (chosen === opt.key ? " selected" : "");
-      btn.innerHTML =
-        '<span class="opt-badge">' + opt.key + "</span>" +
-        "<span>" + escapeHtml(opt.label) + "</span>";
-      btn.onclick = function () {
-        handleSelectOption(q, opt.key, btn);
-      };
-      optionsList.appendChild(btn);
-    });
-
-    document.getElementById("btnPrevQ").disabled = state.currentIndex === 0;
-    document.getElementById("btnNextQ").textContent =
-      state.currentIndex === QUESTIONS.length - 1 ? "FINALIZAR 🏁" : "PRÓXIMA →";
+    byId("btnPrevQ").disabled = state.qIndex === 0;
+    byId("btnNextQ").textContent = state.qIndex === QUESTIONS.length - 1 ? "FINALIZAR 🏁" : "PRÓXIMA →";
   }
 
-  function handleSelectOption(q, key, btnEl) {
-    var prevKey = state.selectedAnswers[q.num];
-    state.selectedAnswers[q.num] = key;
+  function completeMatch() {
+    clearInterval(state.clockId);
+    sfx("win");
+    var spent = Math.max(1, state.durationSec - state.remainingSec);
+    var myRecord = {
+      player_name: state.playerName || "Jogador",
+      emotion: state.emotion,
+      score: state.score,
+      correct_count: state.corrects,
+      completion_time_sec: spent,
+      finished: true
+    };
 
-    var cards = document.querySelectorAll("#optionsList .option-card");
-    for (var i = 0; i < cards.length; i++) {
-      cards[i].classList.remove("selected", "correct-flash", "wrong-flash");
-    }
-    btnEl.classList.add("selected");
-
-    if (!prevKey) {
-      if (key === q.correct) {
-        var speedBonus = Math.min(50, Math.floor(state.remainingSec / 4));
-        state.score += 100 + speedBonus;
-        state.correctCount++;
-        btnEl.classList.add("correct-flash");
-        sfxCorrect();
-      } else {
-        state.lives = Math.max(0, state.lives - 1);
-        btnEl.classList.add("wrong-flash");
-        sfxWrong();
+    var found = false;
+    for (var i = 0; i < state.players.length; i++) {
+      if (state.players[i].player_name === myRecord.player_name) {
+        state.players[i] = myRecord;
+        found = true;
       }
-      document.getElementById("qBonus").textContent = "PTS: " + state.score;
-      updateHud();
-    } else {
-      sfxClick();
     }
-  }
-
-  function prevQuestion() {
-    if (state.currentIndex > 0) {
-      sfxClick();
-      state.currentIndex--;
-      renderQuestion();
-    }
-  }
-
-  function nextQuestion() {
-    sfxClick();
-    if (state.currentIndex < QUESTIONS.length - 1) {
-      state.currentIndex++;
-      renderQuestion();
-    } else {
-      finishQuiz();
-    }
-  }
-
-  async function finishQuiz() {
-    clearInterval(state.timerInterval);
-    sfxFanfare();
-
-    var elapsedSec = Math.max(1, state.durationSec - state.remainingSec);
+    if (!found) state.players.push(myRecord);
 
     if (state.playerId) {
-      try {
-        await sbUpdatePlayer(state.playerId, {
-          score: state.score,
-          correct_count: state.correctCount,
-          finished: true,
-          completion_time_sec: elapsedSec,
-          answers: state.selectedAnswers
-        });
-      } catch (e) {}
-    } else {
-      state.playersCache.push({
-        player_name: state.playerName || "Jogador",
-        emotion: state.emotion,
+      restCall("quiz_players?id=eq." + state.playerId, "PATCH", {
         score: state.score,
-        correct_count: state.correctCount,
-        completion_time_sec: elapsedSec,
-        finished: true
+        correct_count: state.corrects,
+        finished: true,
+        completion_time_sec: spent,
+        answers: state.answers
+      }, "return=minimal", function () {
+        pollSupabase();
       });
     }
 
-    await refreshLobbyAndRanking();
-    renderRanking(state.playersCache);
-    showScreen("screenRanking");
+    drawRanking(state.players);
+    goScreen("screenRanking");
   }
 
-  function renderRanking(players) {
-    var sorted = (players || []).slice().sort(function (a, b) {
+  function drawRanking(rows) {
+    var sorted = (rows || []).slice().sort(function (a, b) {
       if ((b.score || 0) !== (a.score || 0)) return (b.score || 0) - (a.score || 0);
       return (a.completion_time_sec || 9999) - (b.completion_time_sec || 9999);
     });
 
-    document.getElementById("playerSummaryText").textContent =
-      state.emotion + " " + (state.playerName || "Você") + ": " + state.score + " pts (" + state.correctCount + "/10 acertos)";
+    byId("playerSummaryText").textContent =
+      state.emotion + " " + (state.playerName || "Você") + ": " + state.score + " pts (" + state.corrects + "/10 acertos)";
 
-    var list = document.getElementById("rankingList");
+    var list = byId("rankingList");
     list.innerHTML = "";
-
-    sorted.forEach(function (p, idx) {
-      var row = document.createElement("div");
-      var medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : "#" + (idx + 1);
-      row.className = "rank-row" + (idx === 0 ? " top1" : idx === 1 ? " top2" : "");
-      row.innerHTML =
+    for (var i = 0; i < sorted.length; i++) {
+      var p = sorted[i];
+      var medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "#" + (i + 1);
+      var div = document.createElement("div");
+      div.className = "rank-row" + (i === 0 ? " top1" : i === 1 ? " top2" : "");
+      div.innerHTML =
         '<div style="display:flex; align-items:center; gap:8px;">' +
           '<span class="rank-pos">' + medal + "</span>" +
-          '<span style="font-size:20px;">' + (p.emotion || "👾") + "</span>" +
+          '<span style="font-size:20px;">' + esc(p.emotion || "👾") + "</span>" +
           "<div>" +
-            '<div style="font-weight:700; font-size:15px;">' + escapeHtml(p.player_name) + "</div>" +
+            '<div style="font-weight:700; font-size:15px;">' + esc(p.player_name) + "</div>" +
             '<div style="font-size:12px; color:#9be8ff;">' + (p.correct_count || 0) + "/10 acertos • " + (p.completion_time_sec || "--") + "s</div>" +
           "</div>" +
         "</div>" +
         '<div class="rank-pts">' + (p.score || 0) + " PTS</div>";
-      list.appendChild(row);
-    });
+      list.appendChild(div);
+    }
   }
 
-  async function playAgain() {
-    sfxClick();
-    state.matchStartedAt = null;
-    try {
+  // Delegação de clique garantida em todo o gabinete
+  byId("gameCabinet").addEventListener("click", function (ev) {
+    var target = ev.target;
+    if (!target) return;
+
+    var emoBtn = target.closest ? target.closest(".emotion-btn") : null;
+    if (emoBtn) {
+      var btns = document.querySelectorAll("#emotionsGrid .emotion-btn");
+      for (var i = 0; i < btns.length; i++) btns[i].classList.remove("active");
+      emoBtn.classList.add("active");
+      state.emotion = emoBtn.getAttribute("data-emo") || "👾";
+      byId("selectedEmoPreview").textContent = state.emotion;
+      byId("entryStatus").textContent = "Emotion selecionado: " + state.emotion;
+      sfx("click");
+      return;
+    }
+
+    var id = target.id || (target.closest && target.closest("button") ? target.closest("button").id : "");
+
+    if (id === "musicBtn") {
+      musicOn = !musicOn;
+      byId("musicBtn").textContent = musicOn ? "♪ ON" : "♪ OFF";
+      if (musicOn) {
+        ensureAudio();
+        tone(880, 0.09, "square", 0.06, 0);
+      } else if (musicTimer) {
+        clearInterval(musicTimer);
+        musicTimer = null;
+      }
+      return;
+    }
+
+    if (id === "btnInstructorLogin") {
+      var pin = (byId("instructorPinInput").value || "").trim();
+      if (pin === INSTRUCTOR_PIN) {
+        state.isInstructor = true;
+        if (!state.playerName) state.playerName = "Instrutor";
+        sfx("ok");
+        byId("entryStatus").textContent = "Modo Instrutor ativado!";
+        restCall("quiz_rooms?on_conflict=room_code", "POST", {
+          room_code: ROOM_CODE,
+          status: "waiting",
+          duration_seconds: 180
+        }, "resolution=merge-duplicates,return=minimal", function () {
+          pollSupabase();
+        });
+        goScreen("screenLobby");
+      } else {
+        sfx("err");
+        byId("entryStatus").textContent = "Senha incorreta.";
+      }
+      return;
+    }
+
+    if (id === "btnEnterLobby") {
+      var nome = (byId("playerNameInput").value || "").trim();
+      if (!nome) {
+        sfx("err");
+        byId("entryStatus").textContent = "Digite seu nome para entrar.";
+        return;
+      }
+      state.playerName = nome;
+      sfx("click");
+      byId("entryStatus").textContent = "Entrando como " + state.emotion + " " + nome + "...";
+
+      var localList = state.players.slice();
+      localList.push({
+        player_name: nome,
+        emotion: state.emotion,
+        score: 0,
+        correct_count: 0,
+        finished: false
+      });
+      renderPlayers(localList);
+      goScreen("screenLobby");
+
+      restCall("quiz_rooms?on_conflict=room_code", "POST", {
+        room_code: ROOM_CODE,
+        status: "waiting",
+        duration_seconds: 180
+      }, "resolution=merge-duplicates,return=minimal", function () {
+        restCall("quiz_players", "POST", {
+          room_code: ROOM_CODE,
+          player_name: nome,
+          emotion: state.emotion,
+          score: 0,
+          correct_count: 0,
+          finished: false
+        }, "return=representation", function (err, created) {
+          if (!err && created && created.length && created[0].id) {
+            state.playerId = created[0].id;
+            byId("lobbyStatus").textContent = "Conectado ao Supabase! Aguarde o instrutor.";
+            pollSupabase();
+          } else if (err) {
+            byId("lobbyStatus").textContent = "Sala ativa (" + err.message + ")";
+          }
+        });
+      });
+      return;
+    }
+
+    if (id === "btnStartMatch") {
+      if (!state.isInstructor) return;
+      var dur = Number(byId("matchDurationSelect").value) || 180;
+      var isoNow = new Date().toISOString();
+      restCall("quiz_rooms?on_conflict=room_code", "POST", {
+        room_code: ROOM_CODE,
+        status: "playing",
+        started_at: isoNow,
+        duration_seconds: dur,
+        updated_at: isoNow
+      }, "resolution=merge-duplicates,return=minimal", function () {});
+      beginMatch(dur, isoNow);
+      return;
+    }
+
+    if (id === "btnBackEntry") {
+      sfx("click");
+      goScreen("screenEntry");
+      return;
+    }
+
+    if (id === "btnPrevQ") {
+      if (state.qIndex > 0) {
+        sfx("click");
+        state.qIndex--;
+        drawQuestion();
+      }
+      return;
+    }
+
+    if (id === "btnNextQ") {
+      sfx("click");
+      if (state.qIndex < QUESTIONS.length - 1) {
+        state.qIndex++;
+        drawQuestion();
+      } else {
+        completeMatch();
+      }
+      return;
+    }
+
+    if (id === "btnPlayAgain") {
+      sfx("click");
+      state.startedAtMs = null;
       if (state.isInstructor) {
-        await sbUpsertRoom({
+        restCall("quiz_rooms?on_conflict=room_code", "POST", {
           room_code: ROOM_CODE,
           status: "waiting",
           started_at: null,
           updated_at: new Date().toISOString()
-        });
+        }, "resolution=merge-duplicates,return=minimal", function () {});
       }
-      if (state.playerId) {
-        await sbUpdatePlayer(state.playerId, {
-          score: 0,
-          correct_count: 0,
-          finished: false,
-          completion_time_sec: null
-        });
-      }
-    } catch (e) {}
-    await refreshLobbyAndRanking();
-    showScreen("screenLobby");
-  }
+      goScreen("screenLobby");
+      pollSupabase();
+    }
+  });
 
-  // Sincronização automática a cada 2 segundos
-  state.pollInterval = setInterval(function () {
-    if (
-      document.getElementById("screenLobby").classList.contains("active") ||
-      document.getElementById("screenRanking").classList.contains("active")
-    ) {
-      refreshLobbyAndRanking();
+  setInterval(function () {
+    if (byId("screenLobby").classList.contains("active") || byId("screenRanking").classList.contains("active")) {
+      pollSupabase();
     }
   }, 2000);
 
-  refreshLobbyAndRanking();
+  pollSupabase();
+})();
 </script>
 </body>
 </html>
