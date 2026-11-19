@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Desafio IAgora, como vai ser? | Quiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --deep-navy: #06143a;
+    --panel-navy: #081e54;
+    --card-navy: #072363;
+    --cyan-border: #3ef2ff;
+    --gold-top: #fff25c;
+    --gold-mid: #ffbe0b;
+    --orange-bot: #ff7b00;
+    --orange-shadow: #c24600;
+    --green-seg: #3be843;
+    --red-heart: #ff2438;
+    --white: #ffffff;
+  }
+
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: #030b24;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Chakra Petch', sans-serif;
+    color: var(--white);
+    padding: 0;
+  }
+
+  .game-cabinet {
+    width: 100%;
+    max-width: 450px;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+    background: linear-gradient(180deg, #032c96 0%, #0a68e6 42%, #073ba8 82%, #041d66 100%);
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.85);
+    display: flex;
+    flex-direction: column;
+    padding: 14px;
+    gap: 12px;
+  }
+
+  @media (min-height: 820px) and (min-width: 480px) {
+    .game-cabinet {
+      min-height: 800px;
+      border-radius: 22px;
+      border: 4px solid var(--cyan-border);
+      overflow-y: auto;
+    }
+  }
+
+  .screen {
+    display: none;
+    flex-direction: column;
+    flex: 1;
+    gap: 12px;
+    animation: popIn 0.25s ease-out;
+  }
+
+  .screen.active {
+    display: flex;
+  }
+
+  @keyframes popIn {
+    from { opacity: 0; transform: translateY(8px) scale(0.985); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 12px rgba(62, 242, 255, 0.35); }
+    50% { box-shadow: 0 0 22px rgba(62, 242, 255, 0.75); }
+  }
+
+  @keyframes shakeErr {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+
+  .js-warning {
+    background: #7f1d1d;
+    border: 2px solid #fca5a5;
+    color: #fff;
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 13px;
+    text-align: center;
+  }
+
+  .hud-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .hud-box {
+    background: var(--deep-navy);
+    border: 2.5px solid var(--cyan-border);
+    border-radius: 12px;
+    padding: 7px 10px;
+    box-shadow: 0 3px 0 rgba(2, 10, 32, 0.8);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .hearts {
+    display: flex;
+    gap: 5px;
+    font-size: 16px;
+  }
+
+  .heart.lost {
+    filter: grayscale(1) brightness(0.35);
+    transform: scale(0.9);
+  }
+
+  .level-text {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+  }
+
+  .level-bars {
+    display: flex;
+    gap: 3px;
+    background: #030e2b;
+    padding: 3px;
+    border-radius: 5px;
+    border: 1.5px solid #2b9eff;
+  }
+
+  .level-seg {
+    width: 9px;
+    height: 11px;
+    border-radius: 2px;
+    background: #0b245c;
+    transition: background 0.2s, box-shadow 0.2s;
+  }
+
+  .level-seg.filled {
+    background: var(--green-seg);
+    box-shadow: 0 0 6px var(--green-seg);
+  }
+
+  .audio-btn {
+    background: var(--deep-navy);
+    border: 2px solid var(--cyan-border);
+    color: var(--cyan-border);
+    border-radius: 10px;
+    padding: 6px 9px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    cursor: pointer;
+  }
+
+  .main-frame {
+    background: rgba(5, 19, 56, 0.92);
+    border: 3px solid var(--cyan-border);
+    border-radius: 18px;
+    padding: 14px;
+    box-shadow: inset 0 0 24px rgba(62, 242, 255, 0.14), 0 6px 0 rgba(2, 10, 32, 0.85);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+  }
+
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .pill-cyan {
+    background: var(--deep-navy);
+    border: 2px solid var(--cyan-border);
+    color: var(--cyan-border);
+    border-radius: 9px;
+    padding: 5px 9px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8.5px;
+  }
+
+  .pill-gold {
+    background: #1a1203;
+    border: 2px solid var(--gold-mid);
+    color: var(--gold-top);
+    border-radius: 9px;
+    padding: 5px 9px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8.5px;
+  }
+
+  .pill-timer {
+    background: var(--deep-navy);
+    border: 2px solid var(--cyan-border);
+    color: var(--white);
+    border-radius: 9px;
+    padding: 5px 9px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8.5px;
+  }
+
+  .pill-timer.danger {
+    border-color: var(--red-heart);
+    color: #ff707d;
+    animation: pulseGlow 0.7s infinite;
+  }
+
+  .question-box {
+    background: var(--deep-navy);
+    border: 2.5px solid #2b9eff;
+    border-radius: 14px;
+    padding: 14px;
+    font-size: 16px;
+    line-height: 1.42;
+    font-weight: 700;
+    color: var(--white);
+  }
+
+  .options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .option-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--card-navy);
+    border: 2.5px solid #2979e6;
+    border-radius: 14px;
+    padding: 11px 12px;
+    cursor: pointer;
+    text-align: left;
+    color: var(--white);
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: 14.5px;
+    font-weight: 600;
+    line-height: 1.32;
+    transition: transform 0.12s, border-color 0.15s, background 0.15s;
+  }
+
+  .option-card.selected {
+    border-color: var(--gold-top);
+    background: #0d368f;
+    box-shadow: 0 0 16px rgba(255, 242, 92, 0.45);
+  }
+
+  .option-card.correct-flash {
+    border-color: var(--green-seg);
+    background: #0b4f24;
+  }
+
+  .option-card.wrong-flash {
+    border-color: var(--red-heart);
+    background: #590c18;
+    animation: shakeErr 0.3s;
+  }
+
+  .opt-badge {
+    min-width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 2px solid var(--cyan-border);
+    background: var(--deep-navy);
+    color: var(--cyan-border);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .option-card.selected .opt-badge {
+    background: var(--gold-mid);
+    border-color: var(--gold-top);
+    color: #160c00;
+  }
+
+  .footer-nav {
+    display: grid;
+    grid-template-columns: 1fr 1.25fr;
+    gap: 10px;
+    margin-top: auto;
+  }
+
+  .btn-secondary {
+    background: var(--deep-navy);
+    border: 2.5px solid var(--cyan-border);
+    border-radius: 14px;
+    padding: 13px 10px;
+    color: var(--white);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #020c26;
+  }
+
+  .btn-secondary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .btn-primary {
+    background: linear-gradient(180deg, var(--gold-top) 0%, var(--gold-mid) 45%, var(--orange-bot) 100%);
+    border: 2.5px solid #fff799;
+    border-radius: 14px;
+    padding: 13px 12px;
+    color: #1d0e00;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10.5px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 var(--orange-shadow);
+    text-transform: uppercase;
+  }
+
+  .btn-primary:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 var(--orange-shadow);
+  }
+
+  .title-arcade {
+    font-family: 'Press Start 2P', monospace;
+    text-align: center;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--gold-top);
+    text-shadow: 0 3px 0 var(--orange-shadow);
+    margin: 4px 0;
+  }
+
+  .subtitle-arcade {
+    text-align: center;
+    font-size: 14px;
+    color: #bfefff;
+    margin: 0 0 6px;
+  }
+
+  .field-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    color: var(--cyan-border);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    display: block;
+  }
+
+  .arcade-input {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 2.5px solid var(--cyan-border);
+    background: var(--deep-navy);
+    color: var(--white);
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    outline: none;
+  }
+
+  .emotions-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+  }
+
+  .emotion-btn {
+    background: var(--card-navy);
+    border: 2.5px solid #2979e6;
+    border-radius: 12px;
+    padding: 9px 4px;
+    font-size: 22px;
+    cursor: pointer;
+    transition: transform 0.12s, border-color 0.15s, background 0.15s;
+    line-height: 1;
+  }
+
+  .emotion-btn.active {
+    border-color: var(--gold-top);
+    background: #143f9e;
+    transform: scale(1.08);
+    box-shadow: 0 0 14px rgba(255, 242, 92, 0.55);
+  }
+
+  .lobby-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+
+  .lobby-player {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--card-navy);
+    border: 2px solid #266cd1;
+    border-radius: 11px;
+    padding: 8px 12px;
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .badge-ready {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7.5px;
+    color: var(--green-seg);
+    background: #062b14;
+    border: 1.5px solid var(--green-seg);
+    padding: 4px 7px;
+    border-radius: 6px;
+  }
+
+  .instructor-box {
+    background: rgba(3, 14, 43, 0.9);
+    border: 2px dashed var(--gold-mid);
+    border-radius: 12px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .ranking-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .rank-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background: var(--card-navy);
+    border: 2px solid #2b7de9;
+    border-radius: 12px;
+    padding: 10px 12px;
+  }
+
+  .rank-row.top1 {
+    border-color: var(--gold-top);
+    background: linear-gradient(90deg, rgba(255, 190, 11, 0.25), rgba(7, 35, 99, 0.95));
+  }
+
+  .rank-row.top2 {
+    border-color: var(--cyan-border);
+  }
+
+  .rank-pos {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    color: var(--gold-top);
+    min-width: 28px;
+  }
+
+  .rank-pts {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    color: var(--green-seg);
+    text-align: right;
+  }
+
+  .status-msg {
+    font-size: 12.5px;
+    color: #9be8ff;
+    text-align: center;
+    min-height: 18px;
+  }
+</style>
+</head>
+<body>
+<div class="game-cabinet">
+  <div class="js-warning" id="jsWarningBox">
+    ⚠️ Este visualizador bloqueou o JavaScript. Abra o arquivo pelo <strong>Google Chrome / Safari</strong> ou via link web (GitHub Pages / Netlify).
+  </div>
+
+  <!-- HUD SUPERIOR -->
+  <div class="hud-top">
+    <div class="hud-box">
+      <div class="hearts" id="hudHearts">
+        <span class="heart" id="heart1">❤️</span>
+        <span class="heart" id="heart2">❤️</span>
+        <span class="heart" id="heart3">❤️</span>
+      </div>
+    </div>
+
+    <button class="audio-btn" id="musicBtn" type="button" onclick="toggleMusicBtn()">♪ ON</button>
+
+    <div class="hud-box">
+      <span class="level-text" id="hudLevel">NÍVEL 01</span>
+      <div class="level-bars" id="hudLevelBars">
+        <span class="level-seg filled"></span>
+        <span class="level-seg"></span>
+        <span class="level-seg"></span>
+        <span class="level-seg"></span>
+        <span class="level-seg"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TELA 1: ENTRADA / NOME / EMOTION -->
+  <section class="screen active" id="screenEntry">
+    <div class="main-frame">
+      <h1 class="title-arcade">DESAFIO IAGORA<br>COMO VAI SER?</h1>
+      <p class="subtitle-arcade">Digite seu nome, escolha seu emotion e aguarde o início da partida.</p>
+
+      <div>
+        <label class="field-label" for="playerNameInput">Seu Nome</label>
+        <input class="arcade-input" id="playerNameInput" type="text" maxlength="24" placeholder="Digite seu nome">
+      </div>
+
+      <div>
+        <span class="field-label">Escolha seu Emotion (<span id="selectedEmoPreview">👾</span>)</span>
+        <div class="emotions-grid" id="emotionsGrid">
+          <button type="button" class="emotion-btn active" onclick="selectEmotion(this, '👾')">👾</button>
+          <button type="button" class="emotion-btn" onclick="selectEmotion(this, '🚀')">🚀</button>
+          <button type="button" class="emotion-btn" onclick="selectEmotion(this, '😎')">😎</button>
+          <button type="button" class="emotion-btn" onclick="selectEmotion(this, '🔥')">🔥</button>
+          <button type="button" class="emotion-btn" onclick="selectEmotion(this, '🤖')">🤖</button>
+          <button type="button" class="emotion-btn" onclick="selectEmotion(this, '⚡')">⚡</button>
+          <button type="button" class="emotion-btn" onclick="selectEmotion(this, '🎯')">🎯</button>
+          <button type="button" class="emotion-btn" onclick="selectEmotion(this, '🩺')">🩺</button>
+          <button type="button" class="emotion-btn" onclick="selectEmotion(this, '🌟')">🌟</button>
+          <button type="button" class="emotion-btn" onclick="selectEmotion(this, '👑')">👑</button>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="btnEnterLobby" type="button" onclick="enterLobby()">ENTRAR NA SALA</button>
+      <div class="status-msg" id="entryStatus"></div>
+
+      <!-- Painel do Instrutor (sem dica de senha na tela) -->
+      <div class="instructor-box">
+        <span class="field-label" style="color: var(--gold-top); margin:0;">Acesso do Instrutor</span>
+        <div style="display:flex; gap:8px;">
+          <input class="arcade-input" id="instructorPinInput" type="password" maxlength="12" placeholder="Senha do instrutor" style="padding:8px 10px; font-size:13px;">
+          <button class="btn-secondary" id="btnInstructorLogin" type="button" onclick="loginInstructor()" style="padding:8px 10px; font-size:8.5px;">ENTRAR INSTRUTOR</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TELA 2: SALA DE ESPERA (LOBBY) -->
+  <section class="screen" id="screenLobby">
+    <div class="main-frame">
+      <div class="meta-row">
+        <span class="pill-cyan">SALA: IAGORA</span>
+        <span class="pill-gold" id="lobbyCount">0 JOGADORES</span>
+      </div>
+
+      <h2 class="title-arcade" style="font-size:12.5px;">SALA DE ESPERA</h2>
+      <p class="subtitle-arcade" id="lobbyHint">Aguardando o instrutor iniciar a partida...</p>
+
+      <div class="lobby-list" id="lobbyPlayersList"></div>
+
+      <div class="instructor-box" id="instructorControls" style="display:none;">
+        <span class="field-label" style="color: var(--gold-top); margin:0;">Painel do Instrutor</span>
+        <label class="field-label" for="matchDurationSelect" style="margin:0;">Tempo limite da partida</label>
+        <select class="arcade-input" id="matchDurationSelect" style="padding:8px 10px; font-size:14px;">
+          <option value="120">2 minutos (120s)</option>
+          <option value="180" selected>3 minutos (180s)</option>
+          <option value="300">5 minutos (300s)</option>
+        </select>
+        <button class="btn-primary" id="btnStartMatch" type="button" onclick="instructorStartMatch()">▶ INICIAR QUIZ PARA TODOS</button>
+      </div>
+
+      <button class="btn-secondary" id="btnBackEntry" type="button" onclick="backToEntry()">← TROCAR NOME / EMOTION</button>
+      <div class="status-msg" id="lobbyStatus"></div>
+    </div>
+  </section>
+
+  <!-- TELA 3: QUIZ (10 PERGUNTAS) -->
+  <section class="screen" id="screenQuiz">
+    <div class="main-frame">
+      <div class="meta-row">
+        <span class="pill-cyan" id="qCounter">QUESTÃO 01 / 10</span>
+        <span class="pill-gold" id="qBonus">PTS: 0</span>
+        <span class="pill-timer" id="matchTimer">⏱ 03:00</span>
+      </div>
+
+      <div class="question-box" id="questionText"></div>
+
+      <div class="options-list" id="optionsList"></div>
+
+      <div class="footer-nav">
+        <button class="btn-secondary" id="btnPrevQ" type="button" onclick="prevQuestion()">← ANTERIOR</button>
+        <button class="btn-primary" id="btnNextQ" type="button" onclick="nextQuestion()">PRÓXIMA →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- TELA 4: RANKING FINAL -->
+  <section class="screen" id="screenRanking">
+    <div class="main-frame">
+      <h2 class="title-arcade">RANKING FINAL</h2>
+      <p class="subtitle-arcade" id="playerSummaryText"></p>
+
+      <div class="ranking-list" id="rankingList"></div>
+
+      <div class="footer-nav" style="grid-template-columns: 1fr;">
+        <button class="btn-primary" id="btnPlayAgain" type="button" onclick="playAgain()">VOLTAR AO LOBBY</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  // Esconde imediatamente o aviso se o JS estiver funcionando
+  var warnBox = document.getElementById("jsWarningBox");
+  if (warnBox) warnBox.style.display = "none";
+
+  // =========================================================================
+  // 1. SUPABASE REST API (SEM DEPENDER DE CDN EXTERNO)
+  // =========================================================================
+  var SUPABASE_URL = "https://mlvdgmvmuzbcughekpiz.supabase.co";
+  var SUPABASE_ANON_KEY = "sb_publishable_04TgybpwC683g-FRmfFLBg_2qwAVVzl";
+  var ROOM_CODE = "IAGORA";
+  var INSTRUCTOR_PIN = "2026";
+
+  function sbHeaders(prefer) {
+    var h = {
+      "apikey": SUPABASE_ANON_KEY,
+      "Authorization": "Bearer " + SUPABASE_ANON_KEY,
+      "Content-Type": "application/json"
+    };
+    if (prefer) h["Prefer"] = prefer;
+    return h;
+  }
+
+  async function sbGetRoom() {
+    var res = await fetch(
+      SUPABASE_URL + "/rest/v1/quiz_rooms?room_code=eq." + ROOM_CODE + "&select=*",
+      { headers: sbHeaders() }
+    );
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    var rows = await res.json();
+    return rows && rows.length ? rows[0] : null;
+  }
+
+  async function sbUpsertRoom(payload) {
+    var res = await fetch(
+      SUPABASE_URL + "/rest/v1/quiz_rooms?on_conflict=room_code",
+      {
+        method: "POST",
+        headers: sbHeaders("resolution=merge-duplicates,return=representation"),
+        body: JSON.stringify(payload)
+      }
+    );
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return res.json();
+  }
+
+  async function sbGetPlayers() {
+    var res = await fetch(
+      SUPABASE_URL + "/rest/v1/quiz_players?room_code=eq." + ROOM_CODE + "&select=*&order=score.desc,joined_at.asc",
+      { headers: sbHeaders() }
+    );
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return res.json();
+  }
+
+  async function sbInsertPlayer(payload) {
+    var res = await fetch(
+      SUPABASE_URL + "/rest/v1/quiz_players",
+      {
+        method: "POST",
+        headers: sbHeaders("return=representation"),
+        body: JSON.stringify(payload)
+      }
+    );
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    var rows = await res.json();
+    return rows && rows.length ? rows[0] : null;
+  }
+
+  async function sbUpdatePlayer(id, payload) {
+    var res = await fetch(
+      SUPABASE_URL + "/rest/v1/quiz_players?id=eq." + id,
+      {
+        method: "PATCH",
+        headers: sbHeaders("return=representation"),
+        body: JSON.stringify(payload)
+      }
+    );
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return res.json();
+  }
+
+  // =========================================================================
+  // 2. AS 10 PERGUNTAS
+  // =========================================================================
+  var QUESTIONS = [
+    {
+      num: 1,
+      text: "1. Um paciente chega à clínica e pergunta onde deve realizar seu atendimento. O totem de autoatendimento está disponível. Qual é a melhor conduta?",
+      options: [
+        { key: "A", label: "Orientar o paciente a utilizar o totem e encerrar o atendimento." },
+        { key: "B", label: "Explicar como utilizar o totem e oferecer ajuda caso tenha dificuldade." },
+        { key: "C", label: "Informar que o atendimento agora é exclusivamente digital." }
+      ],
+      correct: "B"
+    },
+    {
+      num: 2,
+      text: "2. Um paciente demonstra dificuldade para utilizar um sistema digital e começa a ficar irritado. Como você deve agir?",
+      options: [
+        { key: "A", label: "Demonstrar paciência, ouvir a dificuldade e orientar passo a passo." },
+        { key: "B", label: "Informar que o sistema é simples e que ele precisa tentar novamente." },
+        { key: "C", label: "Solicitar que outro paciente o ajude." }
+      ],
+      correct: "A"
+    },
+    {
+      num: 3,
+      text: "3. Um colaborador utiliza uma resposta automática para todos os pacientes, mesmo quando apresentam necessidades diferentes. Qual é o principal problema?",
+      options: [
+        { key: "A", label: "A resposta automática deveria ser ainda mais curta." },
+        { key: "B", label: "A tecnologia está sendo utilizada sem considerar o contexto e a necessidade de cada pessoa." },
+        { key: "C", label: "O colaborador deveria evitar qualquer ferramenta digital." }
+      ],
+      correct: "B"
+    },
+    {
+      num: 4,
+      text: "4. Um paciente faz uma pergunta e você não sabe a resposta. Como uma ferramenta de IA pode ajudar?",
+      options: [
+        { key: "A", label: "Copiar qualquer resposta apresentada pela IA e repassar ao paciente." },
+        { key: "B", label: "Pedir para a IA decidir o que deve ser feito, sem validação." },
+        { key: "C", label: "Utilizar a IA para buscar apoio e informações, verificando a resposta antes de orientar o paciente." }
+      ],
+      correct: "C"
+    },
+    {
+      num: 5,
+      text: "5. Durante um atendimento, o paciente começa a reclamar do tempo de espera. Qual atitude demonstra acolhimento?",
+      options: [
+        { key: "A", label: "Interromper a reclamação e explicar que a clínica está cheia." },
+        { key: "B", label: "Ouvir com atenção, demonstrar compreensão e explicar com clareza a situação e as possibilidades." },
+        { key: "C", label: "Dizer que o atraso não é responsabilidade da recepção." }
+      ],
+      correct: "B"
+    },
+    {
+      num: 6,
+      text: "6. Um colaborador utiliza o ChatGPT para elaborar um comunicado interno. Qual é a melhor prática?",
+      options: [
+        { key: "A", label: "Revisar o conteúdo, conferir as informações e adequar a linguagem antes de compartilhar." },
+        { key: "B", label: "Enviar imediatamente, pois a IA não comete erros." },
+        { key: "C", label: "Inserir dados pessoais de pacientes para deixar o comunicado mais completo." }
+      ],
+      correct: "A"
+    },
+    {
+      num: 7,
+      text: "7. Um paciente pergunta algo que o sistema automatizado não consegue responder. O que deve acontecer?",
+      options: [
+        { key: "A", label: "O paciente deve tentar novamente até conseguir." },
+        { key: "B", label: "O sistema deve apresentar uma resposta aproximada." },
+        { key: "C", label: "O atendimento deve ser direcionado a um profissional preparado para compreender e resolver a solicitação." }
+      ],
+      correct: "C"
+    },
+    {
+      num: 8,
+      text: "8. Um gestor percebe que a implantação de uma nova tecnologia reduziu o tempo de atendimento, mas aumentou as reclamações dos pacientes. Qual deve ser sua prioridade?",
+      options: [
+        { key: "A", label: "Analisar os indicadores e ouvir os pacientes para ajustar o processo, preservando a qualidade do acolhimento." },
+        { key: "B", label: "Manter o processo porque a redução do tempo é o indicador mais importante." },
+        { key: "C", label: "Retirar imediatamente todos os recursos tecnológicos." }
+      ],
+      correct: "A"
+    },
+    {
+      num: 9,
+      text: "9. Um colega utiliza uma ferramenta de IA e pretende inserir dados pessoais de pacientes para obter uma análise. Qual é a conduta correta?",
+      options: [
+        { key: "A", label: "Permitir, desde que a ferramenta produza resultados rapidamente." },
+        { key: "B", label: "Compartilhar apenas os dados necessários, mesmo sem autorização." },
+        { key: "C", label: "Não inserir dados pessoais ou sensíveis em ferramentas não autorizadas e seguir as regras de segurança e LGPD." }
+      ],
+      correct: "C"
+    },
+    {
+      num: 10,
+      text: "10. Qual é a principal mensagem do treinamento IAgora, como vai ser?",
+      options: [
+        { key: "A", label: "A tecnologia deve assumir o atendimento para reduzir a participação humana." },
+        { key: "B", label: "A tecnologia deve potencializar nosso trabalho, enquanto preservamos a empatia, o acolhimento e a responsabilidade humana." },
+        { key: "C", label: "A inteligência artificial deve ser evitada nas atividades de atendimento." }
+      ],
+      correct: "B"
+    }
+  ];
+
+  // =========================================================================
+  // 3. MÚSICA GAMER ANIMADA (WEB AUDIO API)
+  // =========================================================================
+  var audioCtx = null;
+  var musicOn = true;
+  var musicLoopId = null;
+  var musicStep = 0;
+
+  var MELODY = [
+    523.25, 659.25, 783.99, 1046.50, 783.99, 659.25, 587.33, 698.46,
+    880.00, 1046.50, 880.00, 698.46, 587.33, 783.99, 659.25, 523.25
+  ];
+
+  function unlockAudio() {
+    try {
+      if (!audioCtx) {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) audioCtx = new AC();
+      }
+      if (audioCtx && audioCtx.state === "suspended") {
+        audioCtx.resume();
+      }
+      if (musicOn && !musicLoopId) {
+        musicLoopId = setInterval(function () {
+          if (!musicOn) return;
+          var note = MELODY[musicStep % MELODY.length];
+          playTone(note, 0.11, "square", 0.04, 0);
+          if (musicStep % 4 === 0) {
+            playTone(note / 2, 0.14, "triangle", 0.05, 0);
+          }
+          musicStep++;
+        }, 180);
+      }
+    } catch (e) {}
+  }
+
+  function playTone(freq, duration, type, gainVal, delay) {
+    if (!musicOn || !audioCtx) return;
+    try {
+      var now = audioCtx.currentTime + (delay || 0);
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = type || "square";
+      osc.frequency.setValueAtTime(freq, now);
+      gain.gain.setValueAtTime(gainVal || 0.05, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + (duration || 0.1));
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + (duration || 0.1));
+    } catch (e) {}
+  }
+
+  function toggleMusicBtn() {
+    musicOn = !musicOn;
+    document.getElementById("musicBtn").textContent = musicOn ? "♪ ON" : "♪ OFF";
+    if (musicOn) {
+      unlockAudio();
+      playTone(880, 0.09, "square", 0.06, 0);
+    } else if (musicLoopId) {
+      clearInterval(musicLoopId);
+      musicLoopId = null;
+    }
+  }
+
+  function sfxClick() { unlockAudio(); playTone(660, 0.06, "square", 0.05, 0); }
+  function sfxCorrect() {
+    unlockAudio();
+    playTone(587.33, 0.08, "square", 0.06, 0);
+    playTone(880, 0.14, "square", 0.06, 0.08);
+  }
+  function sfxWrong() {
+    unlockAudio();
+    playTone(220, 0.12, "sawtooth", 0.06, 0);
+    playTone(165, 0.18, "sawtooth", 0.06, 0.1);
+  }
+  function sfxFanfare() {
+    unlockAudio();
+    [523.25, 659.25, 783.99, 1046.5].forEach(function (f, i) {
+      playTone(f, 0.14, "square", 0.06, i * 0.11);
+    });
+  }
+
+  // =========================================================================
+  // 4. ESTADO DO JOGO
+  // =========================================================================
+  var state = {
+    playerId: null,
+    playerName: "",
+    emotion: "👾",
+    isInstructor: false,
+    currentIndex: 0,
+    selectedAnswers: {},
+    lives: 3,
+    score: 0,
+    correctCount: 0,
+    matchStartedAt: null,
+    durationSec: 180,
+    remainingSec: 180,
+    timerInterval: null,
+    pollInterval: null,
+    playersCache: []
+  };
+
+  function showScreen(id) {
+    var screens = document.querySelectorAll(".screen");
+    for (var i = 0; i < screens.length; i++) {
+      screens[i].classList.remove("active");
+    }
+    document.getElementById(id).classList.add("active");
+    document.getElementById("instructorControls").style.display = state.isInstructor ? "flex" : "none";
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, function (m) {
+      return { "&": "&", "<": "<", ">": ">", '"': """, "'": "'" }[m];
+    });
+  }
+
+  function formatTime(sec) {
+    var safe = Math.max(0, sec);
+    var m = String(Math.floor(safe / 60)).padStart(2, "0");
+    var s = String(safe % 60).padStart(2, "0");
+    return m + ":" + s;
+  }
+
+  function updateHud() {
+    for (var i = 1; i <= 3; i++) {
+      var h = document.getElementById("heart" + i);
+      if (i > state.lives) h.classList.add("lost");
+      else h.classList.remove("lost");
+    }
+    var lvl = String(state.currentIndex + 1).padStart(2, "0");
+    document.getElementById("hudLevel").textContent = "NÍVEL " + lvl;
+
+    var segs = document.querySelectorAll("#hudLevelBars .level-seg");
+    var activeCount = Math.max(1, Math.ceil(((state.currentIndex + 1) / QUESTIONS.length) * 5));
+    for (var j = 0; j < segs.length; j++) {
+      if (j < activeCount) segs[j].classList.add("filled");
+      else segs[j].classList.remove("filled");
+    }
+  }
+
+  // =========================================================================
+  // 5. FUNÇÕES DOS BOTÕES
+  // =========================================================================
+  function selectEmotion(btnEl, emo) {
+    var all = document.querySelectorAll("#emotionsGrid .emotion-btn");
+    for (var i = 0; i < all.length; i++) {
+      all[i].classList.remove("active");
+    }
+    btnEl.classList.add("active");
+    state.emotion = emo;
+    document.getElementById("selectedEmoPreview").textContent = emo;
+    sfxClick();
+  }
+
+  async function loginInstructor() {
+    var pin = document.getElementById("instructorPinInput").value.trim();
+    if (pin === INSTRUCTOR_PIN) {
+      state.isInstructor = true;
+      sfxCorrect();
+      document.getElementById("entryStatus").textContent = "Modo Instrutor ativado!";
+      if (!state.playerName) state.playerName = "Instrutor";
+      try {
+        await sbUpsertRoom({ room_code: ROOM_CODE, status: "waiting", duration_seconds: 180 });
+        await refreshLobbyAndRanking();
+      } catch (e) {
+        document.getElementById("lobbyStatus").textContent = "Sala local pronta (" + e.message + ")";
+      }
+      showScreen("screenLobby");
+    } else {
+      sfxWrong();
+      document.getElementById("entryStatus").textContent = "Senha incorreta.";
+    }
+  }
+
+  async function enterLobby() {
+    var name = document.getElementById("playerNameInput").value.trim();
+    if (!name) {
+      sfxWrong();
+      document.getElementById("entryStatus").textContent = "Digite seu nome para entrar.";
+      return;
+    }
+
+    sfxClick();
+    state.playerName = name;
+    document.getElementById("entryStatus").textContent = "Entrando na sala...";
+
+    try {
+      await sbUpsertRoom({ room_code: ROOM_CODE, status: "waiting", duration_seconds: 180 });
+      var inserted = await sbInsertPlayer({
+        room_code: ROOM_CODE,
+        player_name: state.playerName,
+        emotion: state.emotion,
+        score: 0,
+        correct_count: 0,
+        finished: false
+      });
+      if (inserted && inserted.id) state.playerId = inserted.id;
+      document.getElementById("lobbyStatus").textContent = "Conectado! Aguarde o instrutor iniciar.";
+      await refreshLobbyAndRanking();
+    } catch (e) {
+      state.playersCache.push({
+        player_name: state.playerName,
+        emotion: state.emotion,
+        score: 0,
+        correct_count: 0,
+        finished: false
+      });
+      renderLobbyPlayers(state.playersCache);
+      document.getElementById("lobbyStatus").textContent = "Aviso conexão: " + e.message;
+    }
+
+    showScreen("screenLobby");
+  }
+
+  function backToEntry() {
+    sfxClick();
+    showScreen("screenEntry");
+  }
+
+  async function instructorStartMatch() {
+    if (!state.isInstructor) return;
+    var dur = Number(document.getElementById("matchDurationSelect").value) || 180;
+    var nowIso = new Date().toISOString();
+    document.getElementById("lobbyStatus").textContent = "Iniciando quiz...";
+
+    try {
+      await sbUpsertRoom({
+        room_code: ROOM_CODE,
+        status: "playing",
+        started_at: nowIso,
+        duration_seconds: dur,
+        updated_at: nowIso
+      });
+    } catch (e) {
+      document.getElementById("lobbyStatus").textContent = "Iniciando localmente (" + e.message + ")";
+    }
+
+    startQuizMatch(dur, nowIso);
+  }
+
+  function renderLobbyPlayers(players) {
+    state.playersCache = players || [];
+    document.getElementById("lobbyCount").textContent =
+      state.playersCache.length + (state.playersCache.length === 1 ? " JOGADOR" : " JOGADORES");
+
+    var list = document.getElementById("lobbyPlayersList");
+    list.innerHTML = "";
+    state.playersCache.forEach(function (p) {
+      var div = document.createElement("div");
+      div.className = "lobby-player";
+      div.innerHTML =
+        "<span>" + (p.emotion || "👾") + " " + escapeHtml(p.player_name) + "</span>" +
+        '<span class="badge-ready">' + (p.finished ? "FINALIZOU" : "PRONTO") + "</span>";
+      list.appendChild(div);
+    });
+  }
+
+  async function refreshLobbyAndRanking() {
+    try {
+      var room = await sbGetRoom();
+      var players = await sbGetPlayers();
+      if (players) renderLobbyPlayers(players);
+
+      if (room && room.status === "playing" && !state.matchStartedAt) {
+        startQuizMatch(room.duration_seconds || 180, room.started_at);
+      } else if (document.getElementById("screenRanking").classList.contains("active") && players) {
+        renderRanking(players);
+      }
+    } catch (e) {}
+  }
+
+  // =========================================================================
+  // 6. QUIZ & RANKING
+  // =========================================================================
+  function startQuizMatch(durationSec, startedAtIso) {
+    sfxFanfare();
+    state.currentIndex = 0;
+    state.selectedAnswers = {};
+    state.lives = 3;
+    state.score = 0;
+    state.correctCount = 0;
+    state.durationSec = Number(durationSec) || 180;
+    state.matchStartedAt = startedAtIso ? new Date(startedAtIso).getTime() : Date.now();
+
+    if (startedAtIso) {
+      var elapsed = Math.floor((Date.now() - state.matchStartedAt) / 1000);
+      state.remainingSec = Math.max(0, state.durationSec - elapsed);
+    } else {
+      state.remainingSec = state.durationSec;
+    }
+
+    showScreen("screenQuiz");
+    renderQuestion();
+    startTimer();
+  }
+
+  function startTimer() {
+    clearInterval(state.timerInterval);
+    var timerEl = document.getElementById("matchTimer");
+    timerEl.textContent = "⏱ " + formatTime(state.remainingSec);
+
+    state.timerInterval = setInterval(function () {
+      state.remainingSec--;
+      timerEl.textContent = "⏱ " + formatTime(state.remainingSec);
+      if (state.remainingSec <= 20) timerEl.classList.add("danger");
+      else timerEl.classList.remove("danger");
+
+      if (state.remainingSec <= 0) {
+        clearInterval(state.timerInterval);
+        finishQuiz();
+      }
+    }, 1000);
+  }
+
+  function renderQuestion() {
+    var q = QUESTIONS[state.currentIndex];
+    updateHud();
+
+    document.getElementById("qCounter").textContent =
+      "QUESTÃO " + String(q.num).padStart(2, "0") + " / 10";
+    document.getElementById("qBonus").textContent = "PTS: " + state.score;
+    document.getElementById("questionText").textContent = q.text;
+
+    var optionsList = document.getElementById("optionsList");
+    optionsList.innerHTML = "";
+
+    var chosen = state.selectedAnswers[q.num];
+
+    q.options.forEach(function (opt) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "option-card" + (chosen === opt.key ? " selected" : "");
+      btn.innerHTML =
+        '<span class="opt-badge">' + opt.key + "</span>" +
+        "<span>" + escapeHtml(opt.label) + "</span>";
+      btn.onclick = function () {
+        handleSelectOption(q, opt.key, btn);
+      };
+      optionsList.appendChild(btn);
+    });
+
+    document.getElementById("btnPrevQ").disabled = state.currentIndex === 0;
+    document.getElementById("btnNextQ").textContent =
+      state.currentIndex === QUESTIONS.length - 1 ? "FINALIZAR 🏁" : "PRÓXIMA →";
+  }
+
+  function handleSelectOption(q, key, btnEl) {
+    var prevKey = state.selectedAnswers[q.num];
+    state.selectedAnswers[q.num] = key;
+
+    var cards = document.querySelectorAll("#optionsList .option-card");
+    for (var i = 0; i < cards.length; i++) {
+      cards[i].classList.remove("selected", "correct-flash", "wrong-flash");
+    }
+    btnEl.classList.add("selected");
+
+    if (!prevKey) {
+      if (key === q.correct) {
+        var speedBonus = Math.min(50, Math.floor(state.remainingSec / 4));
+        state.score += 100 + speedBonus;
+        state.correctCount++;
+        btnEl.classList.add("correct-flash");
+        sfxCorrect();
+      } else {
+        state.lives = Math.max(0, state.lives - 1);
+        btnEl.classList.add("wrong-flash");
+        sfxWrong();
+      }
+      document.getElementById("qBonus").textContent = "PTS: " + state.score;
+      updateHud();
+    } else {
+      sfxClick();
+    }
+  }
+
+  function prevQuestion() {
+    if (state.currentIndex > 0) {
+      sfxClick();
+      state.currentIndex--;
+      renderQuestion();
+    }
+  }
+
+  function nextQuestion() {
+    sfxClick();
+    if (state.currentIndex < QUESTIONS.length - 1) {
+      state.currentIndex++;
+      renderQuestion();
+    } else {
+      finishQuiz();
+    }
+  }
+
+  async function finishQuiz() {
+    clearInterval(state.timerInterval);
+    sfxFanfare();
+
+    var elapsedSec = Math.max(1, state.durationSec - state.remainingSec);
+
+    if (state.playerId) {
+      try {
+        await sbUpdatePlayer(state.playerId, {
+          score: state.score,
+          correct_count: state.correctCount,
+          finished: true,
+          completion_time_sec: elapsedSec,
+          answers: state.selectedAnswers
+        });
+      } catch (e) {}
+    } else {
+      state.playersCache.push({
+        player_name: state.playerName || "Jogador",
+        emotion: state.emotion,
+        score: state.score,
+        correct_count: state.correctCount,
+        completion_time_sec: elapsedSec,
+        finished: true
+      });
+    }
+
+    await refreshLobbyAndRanking();
+    renderRanking(state.playersCache);
+    showScreen("screenRanking");
+  }
+
+  function renderRanking(players) {
+    var sorted = (players || []).slice().sort(function (a, b) {
+      if ((b.score || 0) !== (a.score || 0)) return (b.score || 0) - (a.score || 0);
+      return (a.completion_time_sec || 9999) - (b.completion_time_sec || 9999);
+    });
+
+    document.getElementById("playerSummaryText").textContent =
+      state.emotion + " " + (state.playerName || "Você") + ": " + state.score + " pts (" + state.correctCount + "/10 acertos)";
+
+    var list = document.getElementById("rankingList");
+    list.innerHTML = "";
+
+    sorted.forEach(function (p, idx) {
+      var row = document.createElement("div");
+      var medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : "#" + (idx + 1);
+      row.className = "rank-row" + (idx === 0 ? " top1" : idx === 1 ? " top2" : "");
+      row.innerHTML =
+        '<div style="display:flex; align-items:center; gap:8px;">' +
+          '<span class="rank-pos">' + medal + "</span>" +
+          '<span style="font-size:20px;">' + (p.emotion || "👾") + "</span>" +
+          "<div>" +
+            '<div style="font-weight:700; font-size:15px;">' + escapeHtml(p.player_name) + "</div>" +
+            '<div style="font-size:12px; color:#9be8ff;">' + (p.correct_count || 0) + "/10 acertos • " + (p.completion_time_sec || "--") + "s</div>" +
+          "</div>" +
+        "</div>" +
+        '<div class="rank-pts">' + (p.score || 0) + " PTS</div>";
+      list.appendChild(row);
+    });
+  }
+
+  async function playAgain() {
+    sfxClick();
+    state.matchStartedAt = null;
+    try {
+      if (state.isInstructor) {
+        await sbUpsertRoom({
+          room_code: ROOM_CODE,
+          status: "waiting",
+          started_at: null,
+          updated_at: new Date().toISOString()
+        });
+      }
+      if (state.playerId) {
+        await sbUpdatePlayer(state.playerId, {
+          score: 0,
+          correct_count: 0,
+          finished: false,
+          completion_time_sec: null
+        });
+      }
+    } catch (e) {}
+    await refreshLobbyAndRanking();
+    showScreen("screenLobby");
+  }
+
+  // Sincronização automática a cada 2 segundos
+  state.pollInterval = setInterval(function () {
+    if (
+      document.getElementById("screenLobby").classList.contains("active") ||
+      document.getElementById("screenRanking").classList.contains("active")
+    ) {
+      refreshLobbyAndRanking();
+    }
+  }, 2000);
+
+  refreshLobbyAndRanking();
+</script>
+</body>
+</html>
