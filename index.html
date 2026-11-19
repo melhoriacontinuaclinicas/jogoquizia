@@ -473,6 +473,15 @@
     text-align: right;
   }
 
+  .monitor-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; }
+  .monitor-stat { background:var(--deep-navy); border:2px solid var(--cyan-border); border-radius:10px; padding:9px 5px; text-align:center; }
+  .monitor-stat strong { display:block; color:var(--gold-top); font-family:'Press Start 2P',monospace; font-size:17px; margin-bottom:6px; }
+  .monitor-stat span { display:block; color:#bfefff; font-size:10px; font-weight:700; }
+  .monitor-player { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 10px; border:1.5px solid #2979e6; background:var(--card-navy); border-radius:9px; font-size:13px; }
+  .badge-pending { color:var(--gold-top); border:1px solid var(--gold-mid); background:#332300; border-radius:6px; padding:4px 6px; font:7px 'Press Start 2P',monospace; white-space:nowrap; }
+  .badge-done { color:var(--green-seg); border:1px solid var(--green-seg); background:#062b14; border-radius:6px; padding:4px 6px; font:7px 'Press Start 2P',monospace; white-space:nowrap; }
+  .monitor-list { display:flex; flex-direction:column; gap:7px; max-height:310px; overflow-y:auto; }
+
   .status-msg {
     font-size: 12.5px;
     color: #9be8ff;
@@ -561,8 +570,27 @@
 
       <div class="lobby-list" id="lobbyPlayersList"></div>
 
-      <div class="instructor-box" id="instructorControls" style="display:none;">
-        <span class="field-label" style="color: var(--gold-top); margin:0;">Painel do Instrutor</span>
+      <p class="status-msg">Você está na sala. Assim que o instrutor iniciar, o quiz abrirá automaticamente.</p>
+      <button class="btn-secondary" id="btnBackEntry" type="button">← VOLTAR</button>
+      <div class="status-msg" id="lobbyStatus"></div>
+    </div>
+  </section>
+
+  <!-- TELA 3: MONITORAMENTO DO INSTRUTOR -->
+  <section class="screen" id="screenInstructor">
+    <div class="main-frame">
+      <div class="meta-row">
+        <span class="pill-cyan">SALA: IAGORA</span>
+        <span class="pill-gold" id="monitorRoomStatus">AGUARDANDO</span>
+      </div>
+      <h2 class="title-arcade" style="font-size:12px;">PAINEL DO INSTRUTOR</h2>
+      <p class="subtitle-arcade" id="monitorHint">Acompanhe os participantes. Você não participa do quiz.</p>
+      <div class="monitor-stats">
+        <div class="monitor-stat"><strong id="monitorTotal">0</strong><span>NA SALA</span></div>
+        <div class="monitor-stat"><strong id="monitorFinished">0</strong><span>FINALIZARAM</span></div>
+        <div class="monitor-stat"><strong id="monitorPending">0</strong><span>FALTAM</span></div>
+      </div>
+      <div class="instructor-box">
         <label class="field-label" for="matchDurationSelect" style="margin:0;">Tempo limite da partida</label>
         <select class="arcade-input" id="matchDurationSelect" style="padding:8px 10px; font-size:14px;">
           <option value="120">2 minutos (120s)</option>
@@ -570,14 +598,15 @@
           <option value="300">5 minutos (300s)</option>
         </select>
         <button class="btn-primary" id="btnStartMatch" type="button">▶ INICIAR QUIZ PARA TODOS</button>
+        <button class="btn-primary" id="btnEndRoom" type="button" style="display:none;">ENCERRAR SALA E VER RANKING</button>
       </div>
-
-      <button class="btn-secondary" id="btnBackEntry" type="button">← TROCAR NOME / EMOTION</button>
-      <div class="status-msg" id="lobbyStatus"></div>
+      <span class="field-label">Acompanhamento dos participantes</span>
+      <div class="monitor-list" id="monitorPlayersList"></div>
+      <div class="status-msg" id="monitorStatus">Atualização automática a cada 2 segundos.</div>
     </div>
   </section>
 
-  <!-- TELA 3: QUIZ (10 PERGUNTAS) -->
+  <!-- TELA 4: QUIZ (10 PERGUNTAS) -->
   <section class="screen" id="screenQuiz">
     <div class="main-frame">
       <div class="meta-row">
@@ -597,7 +626,7 @@
     </div>
   </section>
 
-  <!-- TELA 4: RANKING FINAL -->
+  <!-- TELA 5: RANKING FINAL -->
   <section class="screen" id="screenRanking">
     <div class="main-frame">
       <h2 class="title-arcade">RANKING FINAL</h2>
@@ -606,7 +635,7 @@
       <div class="ranking-list" id="rankingList"></div>
 
       <div class="footer-nav" style="grid-template-columns: 1fr;">
-        <button class="btn-primary" id="btnPlayAgain" type="button">VOLTAR AO LOBBY</button>
+        <button class="btn-primary" id="btnPlayAgain" type="button">VOLTAR AO MONITORAMENTO</button>
       </div>
     </div>
   </section>
@@ -842,7 +871,7 @@
 
   function esc(s) {
     return String(s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&", "<": "<", ">": ">", '"': """, "'": "'" }[c];
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
     });
   }
 
@@ -855,7 +884,6 @@
     var all = document.querySelectorAll(".screen");
     for (var i = 0; i < all.length; i++) all[i].classList.remove("active");
     byId(id).classList.add("active");
-    byId("instructorControls").style.display = state.isInstructor ? "flex" : "none";
   }
 
   function syncHud() {
@@ -893,8 +921,33 @@
     restCall("quiz_rooms?room_code=eq." + ROOM_CODE + "&select=*", "GET", null, null, function (err, rooms) {
       if (!err && rooms && rooms.length) {
         var rm = rooms[0];
-        if (rm.status === "playing" && !state.startedAtMs) {
-          beginMatch(rm.duration_seconds || 180, rm.started_at);
+        if (state.isInstructor) {
+          if (rm.status === "waiting") {
+            byId("monitorRoomStatus").textContent = "AGUARDANDO";
+            byId("monitorHint").textContent = "Participantes entrando na sala. Inicie quando todos estiverem prontos.";
+            byId("btnStartMatch").style.display = "block";
+            byId("btnEndRoom").style.display = "none";
+          } else if (rm.status === "playing") {
+            byId("monitorRoomStatus").textContent = "EM ANDAMENTO";
+            byId("monitorHint").textContent = "Quiz em andamento. Acompanhe quem já finalizou e quem ainda está respondendo.";
+            byId("btnStartMatch").style.display = "none";
+            byId("btnEndRoom").style.display = "block";
+          } else if (rm.status === "completed") {
+            byId("monitorRoomStatus").textContent = "ENCERRADA";
+            byId("monitorHint").textContent = "Sala encerrada. Confira o ranking final abaixo.";
+            byId("btnStartMatch").style.display = "none";
+            byId("btnEndRoom").style.display = "none";
+            drawRanking(state.players);
+            goScreen("screenRanking");
+          }
+        } else {
+          if (rm.status === "playing" && !state.startedAtMs) {
+            beginMatch(rm.duration_seconds || 180, rm.started_at);
+          } else if (rm.status === "completed" && !byId("screenRanking").classList.contains("active")) {
+            clearInterval(state.clockId);
+            drawRanking(state.players);
+            goScreen("screenRanking");
+          }
         }
       }
     });
@@ -902,11 +955,33 @@
     restCall("quiz_players?room_code=eq." + ROOM_CODE + "&select=*&order=score.desc,joined_at.asc", "GET", null, null, function (err, rows) {
       if (!err && rows) {
         renderPlayers(rows);
-        if (byId("screenRanking").classList.contains("active")) {
-          drawRanking(rows);
-        }
+        if (state.isInstructor) renderInstructorMonitor(rows);
+        if (byId("screenRanking").classList.contains("active")) drawRanking(rows);
       }
     });
+  }
+
+  function renderInstructorMonitor(rows) {
+    rows = rows || [];
+    var finished = rows.filter(function (p) { return !!p.finished; }).length;
+    var pending = rows.length - finished;
+    byId("monitorTotal").textContent = rows.length;
+    byId("monitorFinished").textContent = finished;
+    byId("monitorPending").textContent = pending;
+    var box = byId("monitorPlayersList");
+    box.innerHTML = "";
+    if (!rows.length) {
+      box.innerHTML = '<div class="status-msg">Ainda não há participantes na sala.</div>';
+      return;
+    }
+    rows.forEach(function (p) {
+      var row = document.createElement("div");
+      row.className = "monitor-player";
+      row.innerHTML = '<span>' + esc(p.emotion || "👾") + ' ' + esc(p.player_name || "Participante") + '</span>' +
+        (p.finished ? '<span class="badge-done">FINALIZOU</span>' : '<span class="badge-pending">EM ANDAMENTO</span>');
+      box.appendChild(row);
+    });
+    byId("monitorStatus").textContent = finished + " de " + rows.length + " participantes finalizaram.";
   }
 
   function beginMatch(dur, iso) {
@@ -963,13 +1038,26 @@
         b.innerHTML = '<span class="opt-badge">' + opt.key + "</span><span>" + esc(opt.label) + "</span>";
         b.onclick = function () {
           var already = state.answers[q.num];
+          if (already === opt.key) {
+            sfx("click");
+            return;
+          }
+          if (already) {
+            var oldOption = q.options.find(function (item) { return item.key === already; });
+            if (oldOption && oldOption.key === q.correct) {
+              state.score = Math.max(0, state.score - (100 + Math.min(50, Math.floor(state.remainingSec / 4))));
+              state.corrects = Math.max(0, state.corrects - 1);
+            } else if (oldOption) {
+              state.lives = Math.min(3, state.lives + 1);
+            }
+          }
           state.answers[q.num] = opt.key;
           var cards = document.querySelectorAll("#optionsList .option-card");
           for (var k = 0; k < cards.length; k++) {
             cards[k].classList.remove("selected", "correct-flash", "wrong-flash");
           }
           b.classList.add("selected");
-          if (!already) {
+          {
             if (opt.key === q.correct) {
               state.score += 100 + Math.min(50, Math.floor(state.remainingSec / 4));
               state.corrects++;
@@ -982,8 +1070,6 @@
             }
             byId("qBonus").textContent = "PTS: " + state.score;
             syncHud();
-          } else {
-            sfx("click");
           }
         };
         optsBox.appendChild(b);
@@ -1038,8 +1124,9 @@
       return (a.completion_time_sec || 9999) - (b.completion_time_sec || 9999);
     });
 
-    byId("playerSummaryText").textContent =
-      state.emotion + " " + (state.playerName || "Você") + ": " + state.score + " pts (" + state.corrects + "/10 acertos)";
+    byId("playerSummaryText").textContent = state.isInstructor
+      ? "Resultado geral da sala IAgora"
+      : state.emotion + " " + (state.playerName || "Você") + ": " + state.score + " pts (" + state.corrects + "/10 acertos)";
 
     var list = byId("rankingList");
     list.innerHTML = "";
@@ -1098,7 +1185,8 @@
       var pin = (byId("instructorPinInput").value || "").trim();
       if (pin === INSTRUCTOR_PIN) {
         state.isInstructor = true;
-        if (!state.playerName) state.playerName = "Instrutor";
+        state.playerName = "";
+        state.playerId = null;
         sfx("ok");
         byId("entryStatus").textContent = "Modo Instrutor ativado!";
         restCall("quiz_rooms?on_conflict=room_code", "POST", {
@@ -1108,7 +1196,8 @@
         }, "resolution=merge-duplicates,return=minimal", function () {
           pollSupabase();
         });
-        goScreen("screenLobby");
+        goScreen("screenInstructor");
+        pollSupabase();
       } else {
         sfx("err");
         byId("entryStatus").textContent = "Senha incorreta.";
@@ -1138,27 +1227,21 @@
       renderPlayers(localList);
       goScreen("screenLobby");
 
-      restCall("quiz_rooms?on_conflict=room_code", "POST", {
+      restCall("quiz_players", "POST", {
         room_code: ROOM_CODE,
-        status: "waiting",
-        duration_seconds: 180
-      }, "resolution=merge-duplicates,return=minimal", function () {
-        restCall("quiz_players", "POST", {
-          room_code: ROOM_CODE,
-          player_name: nome,
-          emotion: state.emotion,
-          score: 0,
-          correct_count: 0,
-          finished: false
-        }, "return=representation", function (err, created) {
-          if (!err && created && created.length && created[0].id) {
-            state.playerId = created[0].id;
-            byId("lobbyStatus").textContent = "Conectado ao Supabase! Aguarde o instrutor.";
-            pollSupabase();
-          } else if (err) {
-            byId("lobbyStatus").textContent = "Sala ativa (" + err.message + ")";
-          }
-        });
+        player_name: nome,
+        emotion: state.emotion,
+        score: 0,
+        correct_count: 0,
+        finished: false
+      }, "return=representation", function (err, created) {
+        if (!err && created && created.length && created[0].id) {
+          state.playerId = created[0].id;
+          byId("lobbyStatus").textContent = "Você entrou na sala. Aguarde o instrutor iniciar.";
+          pollSupabase();
+        } else if (err) {
+          byId("lobbyStatus").textContent = "Não foi possível entrar. Confirme se o instrutor já abriu a sala. (" + err.message + ")";
+        }
       });
       return;
     }
@@ -1173,8 +1256,26 @@
         started_at: isoNow,
         duration_seconds: dur,
         updated_at: isoNow
-      }, "resolution=merge-duplicates,return=minimal", function () {});
-      beginMatch(dur, isoNow);
+      }, "resolution=merge-duplicates,return=minimal", function (err) {
+        if (err) byId("monitorStatus").textContent = "Erro ao iniciar a sala: " + err.message;
+        else {
+          byId("monitorStatus").textContent = "Partida iniciada para todos os participantes.";
+          pollSupabase();
+        }
+      });
+      return;
+    }
+
+    if (id === "btnEndRoom") {
+      if (!state.isInstructor) return;
+      if (!window.confirm("Encerrar a sala agora e exibir o ranking final para todos?")) return;
+      restCall("quiz_rooms?room_code=eq." + ROOM_CODE, "PATCH", {
+        status: "completed",
+        updated_at: new Date().toISOString()
+      }, "return=minimal", function (err) {
+        if (err) byId("monitorStatus").textContent = "Não foi possível encerrar: " + err.message;
+        else pollSupabase();
+      });
       return;
     }
 
@@ -1207,15 +1308,8 @@
     if (id === "btnPlayAgain") {
       sfx("click");
       state.startedAtMs = null;
-      if (state.isInstructor) {
-        restCall("quiz_rooms?on_conflict=room_code", "POST", {
-          room_code: ROOM_CODE,
-          status: "waiting",
-          started_at: null,
-          updated_at: new Date().toISOString()
-        }, "resolution=merge-duplicates,return=minimal", function () {});
-      }
-      goScreen("screenLobby");
+      if (state.isInstructor) goScreen("screenInstructor");
+      else goScreen("screenLobby");
       pollSupabase();
     }
   });
