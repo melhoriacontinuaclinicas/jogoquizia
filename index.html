@@ -250,20 +250,16 @@
   }
 
   .option-card.selected {
-    border-color: var(--gold-top);
-    background: #0d368f;
-    box-shadow: 0 0 16px rgba(255, 242, 92, 0.45);
+    border-color: var(--cyan-border);
+    background: var(--card-navy);
+    box-shadow: inset 0 0 0 1px rgba(34, 242, 255, 0.22);
   }
 
-  .option-card.correct-flash {
-    border-color: var(--green-seg);
-    background: #0b4f24;
-  }
-
+  .option-card.correct-flash,
   .option-card.wrong-flash {
-    border-color: var(--red-heart);
-    background: #590c18;
-    animation: shakeErr 0.3s;
+    border-color: #2979e6;
+    background: var(--card-navy);
+    animation: none;
   }
 
   .opt-badge {
@@ -282,9 +278,9 @@
   }
 
   .option-card.selected .opt-badge {
-    background: var(--gold-mid);
-    border-color: var(--gold-top);
-    color: #160c00;
+    background: var(--deep-navy);
+    border-color: var(--cyan-border);
+    color: var(--cyan-border);
   }
 
   .footer-nav {
@@ -860,6 +856,7 @@
     isInstructor: false,
     qIndex: 0,
     answers: {},
+    lockedAnswers: {},
     lives: 3,
     score: 0,
     corrects: 0,
@@ -961,6 +958,7 @@
             // O instrutor preparou a próxima turma: liberar o aluno para a sala de espera.
             state.startedAtMs = null;
             state.answers = {};
+            state.lockedAnswers = {};
             state.score = 0;
             state.corrects = 0;
             state.qIndex = 0;
@@ -1062,7 +1060,7 @@
     var q = QUESTIONS[state.qIndex];
     syncHud();
     byId("qCounter").textContent = "QUESTÃO " + String(q.num).padStart(2, "0") + " / 10";
-    byId("qBonus").textContent = "PTS: " + state.score;
+    byId("qBonus").textContent = "PONTUAÇÃO OCULTA";
     byId("questionText").textContent = q.text;
 
     var optsBox = byId("optionsList");
@@ -1076,46 +1074,31 @@
         b.className = "option-card" + (prev === opt.key ? " selected" : "");
         b.innerHTML = '<span class="opt-badge">' + opt.key + "</span><span>" + esc(opt.label) + "</span>";
         b.onclick = function () {
-          var already = state.answers[q.num];
-          if (already === opt.key) {
-            sfx("click");
-            return;
-          }
-          if (already) {
-            var oldOption = q.options.find(function (item) { return item.key === already; });
-            if (oldOption && oldOption.key === q.correct) {
-              state.score = Math.max(0, state.score - (100 + Math.min(50, Math.floor(state.remainingSec / 4))));
-              state.corrects = Math.max(0, state.corrects - 1);
-            } else if (oldOption) {
-              state.lives = Math.min(3, state.lives + 1);
-            }
-          }
+          if (state.lockedAnswers[q.num]) return;
+          sfx("click");
           state.answers[q.num] = opt.key;
           var cards = document.querySelectorAll("#optionsList .option-card");
           for (var k = 0; k < cards.length; k++) {
-            cards[k].classList.remove("selected", "correct-flash", "wrong-flash");
+            cards[k].classList.remove("selected");
           }
           b.classList.add("selected");
-          {
-            if (opt.key === q.correct) {
-              state.score += 100 + Math.min(50, Math.floor(state.remainingSec / 4));
-              state.corrects++;
-              b.classList.add("correct-flash");
-              sfx("ok");
-            } else {
-              state.lives = Math.max(0, state.lives - 1);
-              b.classList.add("wrong-flash");
-              sfx("err");
-            }
-            byId("qBonus").textContent = "PTS: " + state.score;
-            syncHud();
-          }
+          // Nenhuma informação de acerto, erro ou pontuação é exibida nesta etapa.
         };
         optsBox.appendChild(b);
       })(q.options[i]);
     }
 
-    byId("btnPrevQ").disabled = state.qIndex === 0;
+    // O participante não pode retornar a questões anteriores.
+    byId("btnPrevQ").disabled = true;
+    byId("btnPrevQ").style.display = "none";
+    if (state.lockedAnswers[q.num]) {
+      var lockedCards = document.querySelectorAll("#optionsList .option-card");
+      for (var j = 0; j < lockedCards.length; j++) {
+        lockedCards[j].disabled = true;
+        lockedCards[j].style.cursor = "not-allowed";
+        lockedCards[j].style.opacity = "0.88";
+      }
+    }
     byId("btnNextQ").textContent = state.qIndex === QUESTIONS.length - 1 ? "FINALIZAR 🏁" : "PRÓXIMA →";
   }
 
@@ -1413,16 +1396,19 @@
     }
 
     if (id === "btnPrevQ") {
-      if (state.qIndex > 0) {
-        sfx("click");
-        state.qIndex--;
-        drawQuestion();
-      }
       return;
     }
 
     if (id === "btnNextQ") {
       sfx("click");
+      var currentQuestion = QUESTIONS[state.qIndex];
+      if (state.answers[currentQuestion.num] && !state.lockedAnswers[currentQuestion.num]) {
+        state.lockedAnswers[currentQuestion.num] = true;
+        if (state.answers[currentQuestion.num] === currentQuestion.correct) {
+          state.score += 100 + Math.min(50, Math.floor(state.remainingSec / 4));
+          state.corrects++;
+        }
+      }
       if (state.qIndex < QUESTIONS.length - 1) {
         state.qIndex++;
         drawQuestion();
