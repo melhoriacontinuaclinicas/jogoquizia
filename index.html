@@ -602,6 +602,9 @@
       </div>
       <span class="field-label">Acompanhamento dos participantes</span>
       <div class="monitor-list" id="monitorPlayersList"></div>
+      <span class="field-label">Ranking provisório em tempo real</span>
+      <div class="ranking-list" id="monitorRankingList"></div>
+      <button class="btn-primary" id="btnFinalizeClass" type="button" style="display:none;">FINALIZAR TURMA E PREPARAR PRÓXIMA</button>
       <div class="status-msg" id="monitorStatus">Atualização automática a cada 2 segundos.</div>
     </div>
   </section>
@@ -635,7 +638,7 @@
       <div class="ranking-list" id="rankingList"></div>
 
       <div class="footer-nav" style="grid-template-columns: 1fr;">
-        <button class="btn-primary" id="btnPlayAgain" type="button">VOLTAR AO MONITORAMENTO</button>
+        <button class="btn-primary" id="btnPlayAgain" type="button">AGUARDAR PRÓXIMA TURMA</button>
       </div>
     </div>
   </section>
@@ -864,7 +867,9 @@
     remainingSec: 180,
     startedAtMs: null,
     clockId: null,
-    players: []
+    players: [],
+    classNumber: 1,
+    classFinalized: false
   };
 
   function byId(id) { return document.getElementById(id); }
@@ -934,19 +939,34 @@
             byId("btnEndRoom").style.display = "block";
           } else if (rm.status === "completed") {
             byId("monitorRoomStatus").textContent = "ENCERRADA";
-            byId("monitorHint").textContent = "Sala encerrada. Confira o ranking final abaixo.";
+            byId("monitorHint").textContent = "Turma encerrada. Confira o ranking final e finalize para preparar a próxima turma.";
             byId("btnStartMatch").style.display = "none";
             byId("btnEndRoom").style.display = "none";
+            byId("btnFinalizeClass").style.display = "block";
             drawRanking(state.players);
-            goScreen("screenRanking");
+            renderMonitorRanking(state.players);
+            goScreen("screenInstructor");
           }
-        } else {
+        } else if (state.playerId) {
+          // Só redireciona automaticamente quem já entrou nesta sessão.
+          // Ao abrir/recarregar o link, todos começam pela tela inicial do jogo.
           if (rm.status === "playing" && !state.startedAtMs) {
             beginMatch(rm.duration_seconds || 180, rm.started_at);
           } else if (rm.status === "completed" && !byId("screenRanking").classList.contains("active")) {
             clearInterval(state.clockId);
             drawRanking(state.players);
+            byId("btnPlayAgain").textContent = "AGUARDAR PRÓXIMA TURMA";
             goScreen("screenRanking");
+          } else if (rm.status === "waiting" && byId("screenRanking").classList.contains("active")) {
+            // O instrutor preparou a próxima turma: liberar o aluno para a sala de espera.
+            state.startedAtMs = null;
+            state.answers = {};
+            state.score = 0;
+            state.corrects = 0;
+            state.qIndex = 0;
+            byId("lobbyHint").textContent = "A turma anterior foi finalizada. Aguarde o instrutor iniciar a próxima.";
+            byId("lobbyStatus").textContent = "Você está na sala de espera da próxima turma.";
+            goScreen("screenLobby");
           }
         }
       }
@@ -977,11 +997,30 @@
     rows.forEach(function (p) {
       var row = document.createElement("div");
       row.className = "monitor-player";
-      row.innerHTML = '<span>' + esc(p.emotion || "👾") + ' ' + esc(p.player_name || "Participante") + '</span>' +
+      var answered = p.answers && typeof p.answers === "object" ? Object.keys(p.answers).length : 0;
+      var remaining = Math.max(0, QUESTIONS.length - answered);
+      row.innerHTML = '<span>' + esc(p.emotion || "👾") + ' ' + esc(p.player_name || "Participante") + '<small style="display:block;color:#9be8ff;margin-top:4px;">' + (p.score || 0) + ' pts • ' + remaining + ' questão(ões) restante(s)</small></span>' +
         (p.finished ? '<span class="badge-done">FINALIZOU</span>' : '<span class="badge-pending">EM ANDAMENTO</span>');
       box.appendChild(row);
     });
     byId("monitorStatus").textContent = finished + " de " + rows.length + " participantes finalizaram.";
+    renderMonitorRanking(rows);
+  }
+
+  function renderMonitorRanking(rows) {
+    var sorted = (rows || []).slice().sort(function (a, b) {
+      if ((b.score || 0) !== (a.score || 0)) return (b.score || 0) - (a.score || 0);
+      return (a.completion_time_sec || 9999) - (b.completion_time_sec || 9999);
+    });
+    var box = byId("monitorRankingList");
+    if (!box) return;
+    box.innerHTML = "";
+    sorted.forEach(function (p, i) {
+      var row = document.createElement("div");
+      row.className = "rank-row" + (i === 0 ? " top1" : i === 1 ? " top2" : "");
+      row.innerHTML = '<div><b>' + (i + 1) + 'º ' + esc(p.emotion || "👾") + ' ' + esc(p.player_name || "Participante") + '</b><div style="font-size:12px;color:#9be8ff;">' + (p.correct_count || 0) + '/10 acertos • ' + (p.finished ? "Finalizado" : "Em andamento") + '</div></div><div class="rank-pts">' + (p.score || 0) + ' PTS</div>';
+      box.appendChild(row);
+    });
   }
 
   function beginMatch(dur, iso) {
@@ -1114,8 +1153,9 @@
       });
     }
 
-    drawRanking(state.players);
-    goScreen("screenRanking");
+    byId("lobbyHint").textContent = "Você finalizou! Aguarde o instrutor encerrar a sala para liberar o ranking.";
+    byId("lobbyStatus").textContent = "Respostas registradas. O ranking será exibido somente após o encerramento da turma.";
+    goScreen("screenLobby");
   }
 
   function drawRanking(rows) {
@@ -1189,12 +1229,17 @@
         state.playerId = null;
         sfx("ok");
         byId("entryStatus").textContent = "Modo Instrutor ativado!";
-        restCall("quiz_rooms?on_conflict=room_code", "POST", {
-          room_code: ROOM_CODE,
-          status: "waiting",
-          duration_seconds: 180
-        }, "resolution=merge-duplicates,return=minimal", function () {
-          pollSupabase();
+        restCall("quiz_rooms?room_code=eq." + ROOM_CODE + "&select=room_code", "GET", null, null, function (roomErr, existingRoom) {
+          if (!roomErr && (!existingRoom || !existingRoom.length)) {
+            restCall("quiz_rooms", "POST", { room_code: ROOM_CODE, status: "waiting", duration_seconds: 180 }, "return=minimal", function () { pollSupabase(); });
+          } else {
+            pollSupabase();
+          }
+        });
+        restCall("quiz_class_history?select=class_number&order=class_number.desc&limit=1", "GET", null, null, function (hErr, hRows) {
+          var currentClass = (!hErr && hRows && hRows.length ? Number(hRows[0].class_number) : 0) + 1;
+          state.classNumber = currentClass;
+          byId("monitorRoomStatus").textContent = "TURMA " + currentClass + " • AGUARDANDO";
         });
         goScreen("screenInstructor");
         pollSupabase();
@@ -1260,6 +1305,7 @@
         if (err) byId("monitorStatus").textContent = "Erro ao iniciar a sala: " + err.message;
         else {
           byId("monitorStatus").textContent = "Partida iniciada para todos os participantes.";
+          byId("btnFinalizeClass").style.display = "none";
           pollSupabase();
         }
       });
@@ -1275,6 +1321,87 @@
       }, "return=minimal", function (err) {
         if (err) byId("monitorStatus").textContent = "Não foi possível encerrar: " + err.message;
         else pollSupabase();
+      });
+      return;
+    }
+
+    if (id === "btnFinalizeClass") {
+      if (!state.isInstructor) return;
+      if (!window.confirm("Salvar/confirmar o histórico desta turma, limpar os participantes e liberar uma nova turma?")) return;
+
+      // Busca os dados diretamente no banco para não depender do carregamento visual do painel.
+      restCall("quiz_players?room_code=eq." + ROOM_CODE + "&select=*&order=score.desc,joined_at.asc", "GET", null, null, function (playersErr, freshPlayers) {
+        if (playersErr) {
+          byId("monitorStatus").textContent = "Não foi possível carregar os participantes para salvar a turma: " + playersErr.message;
+          return;
+        }
+        var snapshot = (freshPlayers || []).slice().sort(function (a, b) {
+          if ((b.score || 0) !== (a.score || 0)) return (b.score || 0) - (a.score || 0);
+          return (a.completion_time_sec || 9999) - (b.completion_time_sec || 9999);
+        });
+
+        restCall("quiz_class_history?room_code=eq." + ROOM_CODE + "&select=class_number&order=class_number.desc&limit=1", "GET", null, null, function (histErr, history) {
+          if (histErr) {
+            byId("monitorStatus").textContent = "Não foi possível consultar o histórico das turmas: " + histErr.message;
+            return;
+          }
+          var classToSave = (history && history.length ? Number(history[0].class_number) : 0) + 1;
+
+          // Se a gravação anterior já ocorreu, não cria uma turma duplicada.
+          restCall("quiz_class_history?room_code=eq." + ROOM_CODE + "&class_number=eq." + classToSave + "&select=class_number", "GET", null, null, function (checkErr, existing) {
+            if (checkErr) {
+              byId("monitorStatus").textContent = "Erro ao verificar se a turma já foi salva: " + checkErr.message;
+              return;
+            }
+
+            function clearAndPrepareNext() {
+              restCall("quiz_players?room_code=eq." + ROOM_CODE, "DELETE", null, "return=minimal", function (delErr) {
+                if (delErr) {
+                  byId("monitorStatus").textContent = "Histórico salvo, mas não foi possível limpar os participantes: " + delErr.message;
+                  return;
+                }
+                restCall("quiz_rooms?room_code=eq." + ROOM_CODE, "PATCH", {
+                  status: "waiting", started_at: null, duration_seconds: 180, updated_at: new Date().toISOString()
+                }, "return=minimal", function (resetErr) {
+                  if (resetErr) {
+                    byId("monitorStatus").textContent = "Histórico salvo, mas não foi possível liberar a próxima turma: " + resetErr.message;
+                    return;
+                  }
+                  state.players = [];
+                  state.startedAtMs = null;
+                  state.classNumber = classToSave + 1;
+                  byId("monitorRoomStatus").textContent = "TURMA " + state.classNumber + " • AGUARDANDO";
+                  byId("monitorHint").textContent = "Turma " + classToSave + " registrada. A sala foi liberada para receber a próxima turma.";
+                  byId("btnFinalizeClass").style.display = "none";
+                  byId("btnStartMatch").style.display = "block";
+                  byId("btnEndRoom").style.display = "none";
+                  renderInstructorMonitor([]);
+                  byId("monitorStatus").textContent = "Nova turma liberada com sucesso!";
+                  pollSupabase();
+                });
+              });
+            }
+
+            if (existing && existing.length) {
+              clearAndPrepareNext();
+              return;
+            }
+
+            restCall("quiz_class_history", "POST", {
+              room_code: ROOM_CODE,
+              class_number: classToSave,
+              ended_at: new Date().toISOString(),
+              participants: snapshot,
+              ranking: snapshot
+            }, "return=minimal", function (saveErr) {
+              if (saveErr) {
+                byId("monitorStatus").textContent = "Não foi possível salvar o histórico. Verifique a tabela quiz_class_history e suas permissões: " + saveErr.message;
+                return;
+              }
+              clearAndPrepareNext();
+            });
+          });
+        });
       });
       return;
     }
@@ -1307,10 +1434,14 @@
 
     if (id === "btnPlayAgain") {
       sfx("click");
-      state.startedAtMs = null;
-      if (state.isInstructor) goScreen("screenInstructor");
-      else goScreen("screenLobby");
-      pollSupabase();
+      if (state.isInstructor) {
+        goScreen("screenInstructor");
+        pollSupabase();
+      } else {
+        // O participante permanece no ranking final até o instrutor preparar a próxima turma.
+        byId("playerSummaryText").textContent = "Resultado final registrado. Aguarde o instrutor iniciar a próxima turma.";
+      }
+      return;
     }
   });
 
